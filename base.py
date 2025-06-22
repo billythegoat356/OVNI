@@ -232,46 +232,49 @@ def mux(h264_stream: Generator[bytes, None, None], output_path: str) -> None:
 
 
 
-import time
+def test():
 
-start = time.time()
+    import time
 
+    start = time.time()
 
-
-frames = demux_and_decode(
-    input_path="videos/video2.mp4",
-)
-
-
-t = 0
-
-def count():
-    global t 
-    t += 1
-
-frames = (
-    (frame, count())[0]
-    for frame in frames
-)
-
-h264_stream = encode(
-    frames=frames,
-    width=1920,
-    height=1080,
-    fps=25
-)
-
-mux(
-    h264_stream=h264_stream,
-    output_path="videos/out.mp4"
-)
+    frames = demux_and_decode(
+        input_path="videos/video2.mp4",
+    )
 
 
-print(f"Took {round(time.time() - start, 2)}s")
-print(f"Frames: {t}")
+    t = 0
+
+    def count():
+        global t 
+        t += 1
+
+    frames = (
+        (frame, count())[0]
+        for frame in frames
+    )
+
+    h264_stream = encode(
+        frames=frames,
+        width=1920,
+        height=1080,
+        fps=25
+    )
+
+    mux(
+        h264_stream=h264_stream,
+        output_path="videos/out.mp4"
+    )
 
 
-d = t/25
-s = round(d/(time.time() - start), 2)
-print(f"Speed: x{s}")
+    print(f"Took {round(time.time() - start, 2)}s")
+    print(f"Frames: {t}")
 
+
+    d = t/25
+    s = round(d/(time.time() - start), 2)
+    print(f"Speed: x{s}")
+
+
+if __name__ == '__main__':
+    test()
