@@ -11,10 +11,18 @@ import pycuda.autoinit # Required
 
 
 
+GPU_ID = 0
+CODEC = 'h264' # Encoding codec
+BITRATE = '5M'
 
-def decode(input_path: str) -> Generator[cp.ndarray, None, None]:
+
+
+
+def demux_and_decode(input_path: str) -> Generator[cp.ndarray, None, None]:
     """
     Decodes raw frames from the input path using the GPU, and returns them in a generator of CuPy arrays
+    -----------
+    NOTE: The pixel format of the returned frames is flattened NV12
 
     Parameters:
         input_path: str
@@ -23,38 +31,25 @@ def decode(input_path: str) -> Generator[cp.ndarray, None, None]:
         Generator[cp.ndarray, None, None]
     """
 
-    frame_count = None  # Reset to None to decode all frames
 
-    gpu_id = 0
     cuda_ctx = None
-    decode_latency = nvc.DisplayDecodeLatencyType.LOW
+
     try:
-        device_id = gpu_id
-        cuda_device = cuda.Device(device_id)  # pyright: ignore[reportAttributeAccessIssue]
+        cuda_device = cuda.Device(GPU_ID)
         cuda_ctx = cuda_device.retain_primary_context()
         cuda_ctx.push()
         cuda_stream = cuda.Stream()
         nv_dmx = nvc.CreateDemuxer(filename=input_path)
 
-        width = nv_dmx.Width()
-        height = nv_dmx.Height()
-        fps = nv_dmx.FrameRate()
-
-
-        print(width, height, fps)
-
-        caps = nvc.GetDecoderCaps(
-            gpuid=gpu_id,
-            codec=nv_dmx.GetNvCodecId(),
-            chromaformat=nv_dmx.ChromaFormat(),
-            bitdepth=nv_dmx.BitDepth()
-        )
-        if "num_decoder_engines" in caps:
-            print("Number of NVDECs:", caps["num_decoder_engines"])
+        # # These variables contain basic video information
+        # # If they are ever needed, this is how to access them
+        # width = nv_dmx.Width()
+        # height = nv_dmx.Height()
+        # fps = nv_dmx.FrameRate()
 
         nv_dec = nvc.CreateDecoder(
-            gpuid=gpu_id,
-            codec=nv_dmx.GetNvCodecId(),
+            gpuid=GPU_ID,
+            codec=nv_dmx.GetNvCodecId(), # Automatically detect video codec
             cudacontext=cuda_ctx.handle,
             cudastream=cuda_stream.handle,
             usedevicememory=True,
@@ -63,35 +58,26 @@ def decode(input_path: str) -> Generator[cp.ndarray, None, None]:
             maxheight=0,
             outputColorType=nvc.OutputColorType.NATIVE,
             enableSEIMessage=False,
-            latency=decode_latency
+            latency=nvc.DisplayDecodeLatencyType.LOW
         )
 
 
+        # Store the frame shape, and get it only once
+        frame_shape = None
 
-        decoded_frame_size = 0
-        raw_frame = None
-
-        seq_triggered = False
-        # printing out FPS and pixel format of the stream for convenience
-        print("FPS =", nv_dmx.FrameRate())
-        # open the file to be decoded in write mode
-
-        # demuxer can be iterated, fetch the packet from demuxer
-        frames_decoded = 0
         for packet in nv_dmx:
-            # Decode returns a list of packets, range of this list is from [0, size of (decode picture buffer)]
-            # size of (decode picture buffer) depends on GPU, fur Turing series its 8
-            if decode_latency == nvc.DisplayDecodeLatencyType.LOW or decode_latency == nvc.DisplayDecodeLatencyType.ZERO:
-                # Set when the packet contains exactly one frame or one field bitstream data, parser will trigger decode callback immediately when this flag is set.
-                packet.decode_flag = nvc.VideoPacketFlag.ENDOFPICTURE
+
+            # For low latency, Set when the packet contains exactly one frame or one field bitstream data, parser will trigger decode callback immediately when this flag is set.
+            packet.decode_flag = nvc.VideoPacketFlag.ENDOFPICTURE
 
             for decoded_frame in nv_dec.Decode(packet):
 
                 # 'decoded_frame' contains list of views implementing cuda array interface
                 # for nv12, it would contain 2 views for each plane and two planes would be contiguous 
-                if not seq_triggered:
-                    decoded_frame_size = nv_dec.GetFrameSize()
-                    seq_triggered = True
+
+                # Get decoded frame shape only once
+                if frame_shape is None:
+                    frame_shape = nv_dec.GetFrameSize()
 
                 luma_base_addr = decoded_frame.GetPtrToPlane(0)
                 frame_size = decoded_frame.framesize()
@@ -100,18 +86,10 @@ def decode(input_path: str) -> Generator[cp.ndarray, None, None]:
                 # UnownedMemory lets CuPy use external GPU memory safely without managing its lifecycle
                 mem = cp.cuda.UnownedMemory(luma_base_addr, frame_size, None)
                 memptr = cp.cuda.MemoryPointer(mem, 0)
-                gpu_frame = cp.ndarray(shape=decoded_frame_size, dtype=cp.uint8, memptr=memptr)
+                gpu_frame = cp.ndarray(shape=frame_shape, dtype=cp.uint8, memptr=memptr)
 
                 yield gpu_frame
-
                 
-                frames_decoded += 1
-                if frame_count is not None and frame_count > 0 and frames_decoded >= frame_count:
-                    print(f"Reached requested frame count: {frame_count}")
-                    return
-            
-            if frame_count is not None and frame_count > 0 and frames_decoded < frame_count:
-                print(f"Video ended before reaching requested frame count. Decoded {frames_decoded} frames")
     except nvc.PyNvVCExceptionUnsupported as e:
         print(f"CreateDecoder failure: {e}")
     except Exception as e:
@@ -124,43 +102,61 @@ def decode(input_path: str) -> Generator[cp.ndarray, None, None]:
 
 
 
+
 def encode(frames: Generator[cp.ndarray, None, None], width: int, height: int, fps: int) -> Generator[bytes, None, None]:
     """
     Takes a generator of CuPy arrays, and encodes them into a H264 bytestream
+    -----------
+    NOTE: The pixel format of the frames is expected to be flattened NV12, like the one given from decoding
 
     Parameters:
         frames: Generator[cp.ndarray, None, None]
         width: int
         height: int
         fps: int
-        output_path: str
 
     Returns:
-        None
+        Generator[bytes, None, None]
     """
 
-    gpu_id = 0
-    codec = 'h264'
-    bitrate = 5000000
+
+    # The following class is required because NVC tries to access the `cuda` attribute to determine if the given array is,
+    #  on the GPU, and it calls __dlpack__ with `stream` as a positional argument, but it has to be non-positional
+    class FrameWrapper:
+        def __init__(self, arr):
+            self.arr = arr
+
+        def __getattr__(self, name):
+            return getattr(self.arr, name)
+
+        def cuda(self):
+            return self
+        
+        def __dlpack__(self, *args, **kwargs):
+            stream = None
+            if args:
+                stream = args[0]
+            return self.arr.__dlpack__(stream=stream, **kwargs)
+
 
     cuda_ctx = None
     try:
-        cuda_device = cuda.Device(gpu_id)
+        cuda_device = cuda.Device(GPU_ID)
         cuda_ctx = cuda_device.retain_primary_context()
         cuda_ctx.push()
 
         cuda_stream = cuda.Stream()
 
         config_params = {
-            'gpuid': gpu_id,
-            'codec': codec,
+            'gpuid': GPU_ID,
+            'codec': CODEC,
             'preset': 'P3',
             'tuning_info': 'low_latency',
             'rc': 'cbr',
             'fps': fps,
             'gop': fps,
             'bf': 0,
-            'bitrate': f"{bitrate//1000000}M",
+            'bitrate': BITRATE,
             'maxbitrate': 0,
             'vbvinit': 0,
             'vbvbufsize': 0,
@@ -182,24 +178,15 @@ def encode(frames: Generator[cp.ndarray, None, None], width: int, height: int, f
         )
 
         for frame in frames:
-            frame_2d = frame.reshape((height * 3 // 2, width))
+            # Specific to NV12 pixel format
+            frame_nv12 = frame.reshape((height * 3 // 2, width))
 
-            class FrameWrapper:
-                def __init__(self, arr):
-                    self.arr = arr
-                def cuda(self):
-                    return self
-                def __getattr__(self, name):
-                    return getattr(self.arr, name)
-                def __dlpack__(self, *args, **kwargs):
-                    stream = None
-                    if args:
-                        stream = args[0]
-                    return self.arr.__dlpack__(stream=stream, **kwargs)
-
-            frame_2d = FrameWrapper(frame_2d)
+            # Wrap the frame to be compatible with the NVC method
+            frame_nv12 = FrameWrapper(frame_nv12)
             
-            encoded_bytes = nv_enc.Encode(frame_2d)
+            # Encode the frame into H264 bytes
+            encoded_bytes = nv_enc.Encode(frame_nv12)
+            
             if encoded_bytes and len(encoded_bytes) > 0:
                 yield encoded_bytes
 
@@ -221,13 +208,20 @@ def encode(frames: Generator[cp.ndarray, None, None], width: int, height: int, f
 
 def mux(h264_stream: Generator[bytes, None, None], output_path: str) -> None:
     """
-    
+    Takes a generator of a H264 bytestream, and muxes it with a FFmpeg pipe in the output path
+
+    Parameters:
+        h264_stream: Generator[bytes, None, None]
+        output_path: str
+        
+    Returns:
+        None
     """
 
     # Start FFmpeg process with pipe input
     ffmpeg_cmd = [
         'ffmpeg',
-        '-f', 'h264',           # Input format
+        '-f', CODEC,            # Input format
         '-i', 'pipe:0',         # Read from stdin
         '-c', 'copy',           # Copy without re-encoding
         '-y',                   # Overwrite output
@@ -260,12 +254,19 @@ start = time.time()
 
 
 
-frames = decode(
+frames = demux_and_decode(
     input_path="videos/video2.mp4",
 )
 
+
+t = 0
+
+def count():
+    global t 
+    t += 1
+
 frames = (
-    frame
+    (frame, count())[0]
     for frame in frames
 )
 
@@ -283,4 +284,9 @@ mux(
 
 
 print(f"Took {round(time.time() - start, 2)}s")
+print(f"Frames: {t}")
 
+
+d = t/25
+s = round(d/(time.time() - start), 2)
+print(f"Speed: x{s}")
