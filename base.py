@@ -1,4 +1,4 @@
-from typing import Generator
+from typing import Generator, Iterable
 import subprocess
 import atexit
 
@@ -103,14 +103,14 @@ def demux_and_decode(input_path: str) -> Generator[cp.ndarray, None, None]:
 
 
 
-def encode(frames: Generator[cp.ndarray, None, None], width: int, height: int, fps: int) -> Generator[bytes, None, None]:
+def encode(frames: Iterable[cp.ndarray], width: int, height: int, fps: int) -> Generator[bytes, None, None]:
     """
-    Takes a generator of CuPy arrays, and encodes them into a H264 bytestream
+    Takes an iterable of CuPy arrays, and encodes them into a H264 bytestream
     -----------
     NOTE: The pixel format of the frames is expected to be flattened NV12, like the one given from decoding
 
     Parameters:
-        frames: Generator[cp.ndarray, None, None]
+        frames: Iterable[cp.ndarray]
         width: int
         height: int
         fps: int
@@ -191,12 +191,12 @@ def encode(frames: Generator[cp.ndarray, None, None], width: int, height: int, f
 
 
 
-def mux(h264_stream: Generator[bytes, None, None], output_path: str) -> None:
+def mux(h264_stream: Iterable[bytes], output_path: str) -> None:
     """
-    Takes a generator of a H264 bytestream, and muxes it with a FFmpeg pipe in the output path
+    Takes an iterable of a H264 bytestream, and muxes it with a FFmpeg pipe in the output path
 
     Parameters:
-        h264_stream: Generator[bytes, None, None]
+        h264_stream: Iterable[bytes]
         output_path: str
         
     Returns:
@@ -362,12 +362,12 @@ def rgb_to_nv12(rgb: cp.ndarray, width: int, height: int) -> cp.ndarray:
     return cp.concatenate((y_plane.ravel(), uv_plane.ravel()))
 
 
-def pipe_nv12_to_rgb(frames: Generator[cp.ndarray, None, None], width: int, height: int) -> Generator[cp.ndarray, None, None]:
+def pipe_nv12_to_rgb(frames: Iterable[cp.ndarray], width: int, height: int) -> Generator[cp.ndarray, None, None]:
     for nv12_frame in frames:
         rgb_frame = nv12_to_rgb(nv12_frame, width, height)
         yield rgb_frame
 
-def pipe_rgb_to_nv12(frames: Generator[cp.ndarray, None, None], width: int, height: int) -> Generator[cp.ndarray, None, None]:
+def pipe_rgb_to_nv12(frames: Iterable[cp.ndarray], width: int, height: int) -> Generator[cp.ndarray, None, None]:
     for rgb_frame in frames:
         nv12_frame = rgb_to_nv12(rgb_frame, width, height)
         yield nv12_frame
@@ -391,8 +391,9 @@ def test():
         nonlocal t
         for frame in frames:
 
-            yield frame
-            t += 1
+            if t < 500:
+                yield frame
+                t += 1
 
 
     frames = pipe_nv12_to_rgb(frames, 1920, 1080)
