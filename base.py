@@ -11,23 +11,26 @@ import pycuda.autoinit # Required
 
 
 
-
+# Constants
 GPU_ID = 0
 CODEC = 'h264' # Encoding codec
 BITRATE = '5M'
 PRESET = 'P3' # 1-7, determines quality, but impacts speed
 
+
+# Initialize cuda device and context
 cuda_device = cuda.Device(GPU_ID)
 cuda_ctx = cuda_device.retain_primary_context()
 cuda_ctx.push()
 
+# Close cuda context at exit
 atexit.register(cuda_ctx.pop)
 
 
 
 def demux_and_decode(input_path: str) -> Generator[cp.ndarray, None, None]:
     """
-    Decodes raw frames from the input path using the GPU, and returns them in a generator of CuPy arrays
+    Decodes raw frames from the input path using NVC, and returns them in a generator of CuPy arrays
     -----------
     NOTE: The pixel format of the returned frames is flattened NV12
 
@@ -38,6 +41,7 @@ def demux_and_decode(input_path: str) -> Generator[cp.ndarray, None, None]:
         Generator[cp.ndarray, None, None]
     """
 
+    # Create cuda stream and demuxer
     cuda_stream = cuda.Stream()
     nv_dmx = nvc.CreateDemuxer(filename=input_path)
 
@@ -47,6 +51,7 @@ def demux_and_decode(input_path: str) -> Generator[cp.ndarray, None, None]:
     # height = nv_dmx.Height()
     # fps = nv_dmx.FrameRate()
 
+    # Create decoder
     nv_dec = nvc.CreateDecoder(
         gpuid=GPU_ID,
         codec=nv_dmx.GetNvCodecId(), # Automatically detect video codec
@@ -65,33 +70,34 @@ def demux_and_decode(input_path: str) -> Generator[cp.ndarray, None, None]:
     # Store the frame shape, and get it only once
     frame_shape = None
 
+    # Iterate over all packets
     for packet in nv_dmx:
 
-        # Market the packet as containing exactly one complete frame
+        # Market the packet as containing complete frames
         packet.decode_flag = nvc.VideoPacketFlag.ENDOFPICTURE
 
+        # Decode packet and iterate over frames
         for decoded_frame in nv_dec.Decode(packet):
 
             # 'decoded_frame' contains list of views implementing cuda array interface
-            # for nv12, it would contain 2 views for each plane and two planes would be contiguous 
+            # For nv12, it would contain 2 views for each plane and two planes would be contiguous 
 
             # Get decoded frame shape only once
             if frame_shape is None:
                 frame_shape = nv_dec.GetFrameSize()
 
-            luma_base_addr = decoded_frame.GetPtrToPlane(0)
+            # Get address of the frame
+            base_addr = decoded_frame.GetPtrToPlane(0)
+            # Get frame size (bytes)
             frame_size = decoded_frame.framesize()
 
             # Wrap the raw GPU pointer into a CuPy array without copying
             # UnownedMemory lets CuPy use external GPU memory safely without managing its lifecycle
-            mem = cp.cuda.UnownedMemory(luma_base_addr, frame_size, None)
+            mem = cp.cuda.UnownedMemory(base_addr, frame_size, None)
             memptr = cp.cuda.MemoryPointer(mem, 0)
             gpu_frame = cp.ndarray(shape=frame_shape, dtype=cp.uint8, memptr=memptr)
 
             yield gpu_frame
-
-
-
 
 
 
@@ -133,6 +139,7 @@ def encode(frames: Generator[cp.ndarray, None, None], width: int, height: int, f
             return self.arr.__dlpack__(stream=stream, **kwargs)
 
 
+    # Create cuda stream and encoder
     cuda_stream = cuda.Stream()
     config_params = {
         'gpuid': GPU_ID,
@@ -155,7 +162,6 @@ def encode(frames: Generator[cp.ndarray, None, None], width: int, height: int, f
         'enable_async': True,
         'bRepeatSPSPPS': True
     }
-
     nv_enc = nvc.CreateEncoder(
         width,
         height,
@@ -164,8 +170,9 @@ def encode(frames: Generator[cp.ndarray, None, None], width: int, height: int, f
         **config_params
     )
 
+    # Iterate over frames of generator
     for frame in frames:
-        # Specific to NV12 pixel format
+        # Unflatten ~ specific to NV12 pixel format
         frame_nv12 = frame.reshape((height * 3 // 2, width))
 
         # Wrap the frame to be compatible with the NVC method
@@ -173,16 +180,12 @@ def encode(frames: Generator[cp.ndarray, None, None], width: int, height: int, f
         
         # Encode the frame into H264 bytes
         encoded_bytes = nv_enc.Encode(frame_nv12)
-        
-        if encoded_bytes and len(encoded_bytes) > 0:
-            yield encoded_bytes
+        yield encoded_bytes
 
 
     # Flush remaining packets
     encoded_bytes = nv_enc.EndEncode()
-    if encoded_bytes and len(encoded_bytes) > 0:
-        yield encoded_bytes
-
+    yield encoded_bytes
 
 
 
@@ -218,6 +221,7 @@ def mux(h264_stream: Generator[bytes, None, None], output_path: str) -> None:
     )
     pipe = ffmpeg_process.stdin
 
+    # Iterate over H264 bytestream, and write each packet
     for encoded_bytes in h264_stream:
         pipe.write(encoded_bytes)
         pipe.flush()  # Ensure data is sent immediately
@@ -246,14 +250,14 @@ def test():
 
     t = 0
 
-    def count():
-        nonlocal t 
-        t += 1
+    def process_frames(frames):
+        nonlocal t
+        for frame in frames:
 
-    frames = (
-        (frame, count())[0]
-        for frame in frames
-    )
+            yield frame
+            t += 1
+
+    frames = process_frames(frames)
 
     h264_stream = encode(
         frames=frames,
