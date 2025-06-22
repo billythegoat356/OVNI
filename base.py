@@ -15,6 +15,7 @@ import pycuda.autoinit # Required
 GPU_ID = 0
 CODEC = 'h264' # Encoding codec
 BITRATE = '5M'
+PRESET = 'P3' # 1-7, determines quality, but impacts speed
 
 cuda_device = cuda.Device(GPU_ID)
 cuda_ctx = cuda_device.retain_primary_context()
@@ -66,7 +67,7 @@ def demux_and_decode(input_path: str) -> Generator[cp.ndarray, None, None]:
 
     for packet in nv_dmx:
 
-        # For low latency, Set when the packet contains exactly one frame or one field bitstream data, parser will trigger decode callback immediately when this flag is set.
+        # Market the packet as containing exactly one complete frame
         packet.decode_flag = nvc.VideoPacketFlag.ENDOFPICTURE
 
         for decoded_frame in nv_dec.Decode(packet):
@@ -136,7 +137,9 @@ def encode(frames: Generator[cp.ndarray, None, None], width: int, height: int, f
     config_params = {
         'gpuid': GPU_ID,
         'codec': CODEC,
-        'preset': 'P3',
+        'preset': PRESET,
+        'cudacontext': cuda_ctx.handle,
+        'cudastream': cuda_stream.handle,
         'tuning_info': 'low_latency',
         'rc': 'cbr',
         'fps': fps,
@@ -149,8 +152,6 @@ def encode(frames: Generator[cp.ndarray, None, None], width: int, height: int, f
         'qmin': "0,0,0",
         'qmax': "0,0,0", 
         'initqp': "0,0,0",
-        'cudacontext': cuda_ctx.handle,
-        'cudastream': cuda_stream.handle,
         'enable_async': True,
         'bRepeatSPSPPS': True
     }
@@ -246,7 +247,7 @@ def test():
     t = 0
 
     def count():
-        global t 
+        nonlocal t 
         t += 1
 
     frames = (
