@@ -28,7 +28,7 @@ atexit.register(cuda_ctx.pop)
 
 
 
-def demux_and_decode(input_path: str) -> Generator[cp.ndarray, None, None]:
+def demux_and_decode(input_path: str, frame_count: int | None = None) -> Generator[cp.ndarray, None, None]:
     """
     Decodes raw frames from the input path using NVC, and returns them in a generator of CuPy arrays
     -----------
@@ -36,10 +36,13 @@ def demux_and_decode(input_path: str) -> Generator[cp.ndarray, None, None]:
 
     Parameters:
         input_path: str
+        frame_count: int | None = None - the number of frames to yield, None means unlimited
 
     Returns:
         Generator[cp.ndarray, None, None]
     """
+
+    passed_frames = 0
 
     # Create cuda stream and demuxer
     cuda_stream = cuda.Stream()
@@ -79,6 +82,9 @@ def demux_and_decode(input_path: str) -> Generator[cp.ndarray, None, None]:
         # Decode packet and iterate over frames
         for decoded_frame in nv_dec.Decode(packet):
 
+            if passed_frames == frame_count:
+                return
+
             # 'decoded_frame' contains list of views implementing cuda array interface
             # For nv12, it would contain 2 views for each plane and two planes would be contiguous 
 
@@ -98,6 +104,8 @@ def demux_and_decode(input_path: str) -> Generator[cp.ndarray, None, None]:
             gpu_frame = cp.ndarray(shape=frame_shape, dtype=cp.uint8, memptr=memptr)
 
             yield gpu_frame
+
+            passed_frames += 1
 
 
 
@@ -382,6 +390,7 @@ def test():
 
     frames = demux_and_decode(
         input_path="videos/video2.mp4",
+        frame_count=500
     )
 
 
@@ -391,9 +400,8 @@ def test():
         nonlocal t
         for frame in frames:
 
-            if t < 500:
-                yield frame
-                t += 1
+            yield frame
+            t += 1
 
 
     frames = pipe_nv12_to_rgb(frames, 1920, 1080)
