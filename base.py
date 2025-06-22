@@ -37,65 +37,58 @@ def demux_and_decode(input_path: str) -> Generator[cp.ndarray, None, None]:
         Generator[cp.ndarray, None, None]
     """
 
+    cuda_stream = cuda.Stream()
+    nv_dmx = nvc.CreateDemuxer(filename=input_path)
+
+    # # These variables contain basic video information
+    # # If they are ever needed, this is how to access them
+    # width = nv_dmx.Width()
+    # height = nv_dmx.Height()
+    # fps = nv_dmx.FrameRate()
+
+    nv_dec = nvc.CreateDecoder(
+        gpuid=GPU_ID,
+        codec=nv_dmx.GetNvCodecId(), # Automatically detect video codec
+        cudacontext=cuda_ctx.handle,
+        cudastream=cuda_stream.handle,
+        usedevicememory=True,
+        enableasyncallocations=True,
+        maxwidth=0,
+        maxheight=0,
+        outputColorType=nvc.OutputColorType.NATIVE,
+        enableSEIMessage=False,
+        latency=nvc.DisplayDecodeLatencyType.LOW
+    )
 
 
-    try:
-        cuda_stream = cuda.Stream()
-        nv_dmx = nvc.CreateDemuxer(filename=input_path)
+    # Store the frame shape, and get it only once
+    frame_shape = None
 
-        # # These variables contain basic video information
-        # # If they are ever needed, this is how to access them
-        # width = nv_dmx.Width()
-        # height = nv_dmx.Height()
-        # fps = nv_dmx.FrameRate()
+    for packet in nv_dmx:
 
-        nv_dec = nvc.CreateDecoder(
-            gpuid=GPU_ID,
-            codec=nv_dmx.GetNvCodecId(), # Automatically detect video codec
-            cudacontext=cuda_ctx.handle,
-            cudastream=cuda_stream.handle,
-            usedevicememory=True,
-            enableasyncallocations=True,
-            maxwidth=0,
-            maxheight=0,
-            outputColorType=nvc.OutputColorType.NATIVE,
-            enableSEIMessage=False,
-            latency=nvc.DisplayDecodeLatencyType.LOW
-        )
+        # For low latency, Set when the packet contains exactly one frame or one field bitstream data, parser will trigger decode callback immediately when this flag is set.
+        packet.decode_flag = nvc.VideoPacketFlag.ENDOFPICTURE
 
+        for decoded_frame in nv_dec.Decode(packet):
 
-        # Store the frame shape, and get it only once
-        frame_shape = None
+            # 'decoded_frame' contains list of views implementing cuda array interface
+            # for nv12, it would contain 2 views for each plane and two planes would be contiguous 
 
-        for packet in nv_dmx:
+            # Get decoded frame shape only once
+            if frame_shape is None:
+                frame_shape = nv_dec.GetFrameSize()
 
-            # For low latency, Set when the packet contains exactly one frame or one field bitstream data, parser will trigger decode callback immediately when this flag is set.
-            packet.decode_flag = nvc.VideoPacketFlag.ENDOFPICTURE
+            luma_base_addr = decoded_frame.GetPtrToPlane(0)
+            frame_size = decoded_frame.framesize()
 
-            for decoded_frame in nv_dec.Decode(packet):
+            # Wrap the raw GPU pointer into a CuPy array without copying
+            # UnownedMemory lets CuPy use external GPU memory safely without managing its lifecycle
+            mem = cp.cuda.UnownedMemory(luma_base_addr, frame_size, None)
+            memptr = cp.cuda.MemoryPointer(mem, 0)
+            gpu_frame = cp.ndarray(shape=frame_shape, dtype=cp.uint8, memptr=memptr)
 
-                # 'decoded_frame' contains list of views implementing cuda array interface
-                # for nv12, it would contain 2 views for each plane and two planes would be contiguous 
+            yield gpu_frame
 
-                # Get decoded frame shape only once
-                if frame_shape is None:
-                    frame_shape = nv_dec.GetFrameSize()
-
-                luma_base_addr = decoded_frame.GetPtrToPlane(0)
-                frame_size = decoded_frame.framesize()
-
-                # Wrap the raw GPU pointer into a CuPy array without copying
-                # UnownedMemory lets CuPy use external GPU memory safely without managing its lifecycle
-                mem = cp.cuda.UnownedMemory(luma_base_addr, frame_size, None)
-                memptr = cp.cuda.MemoryPointer(mem, 0)
-                gpu_frame = cp.ndarray(shape=frame_shape, dtype=cp.uint8, memptr=memptr)
-
-                yield gpu_frame
-                
-    except nvc.PyNvVCExceptionUnsupported as e:
-        print(f"CreateDecoder failure: {e}")
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
 
 
 
@@ -139,61 +132,57 @@ def encode(frames: Generator[cp.ndarray, None, None], width: int, height: int, f
             return self.arr.__dlpack__(stream=stream, **kwargs)
 
 
-    try:
-        cuda_stream = cuda.Stream()
-        config_params = {
-            'gpuid': GPU_ID,
-            'codec': CODEC,
-            'preset': 'P3',
-            'tuning_info': 'low_latency',
-            'rc': 'cbr',
-            'fps': fps,
-            'gop': fps,
-            'bf': 0,
-            'bitrate': BITRATE,
-            'maxbitrate': 0,
-            'vbvinit': 0,
-            'vbvbufsize': 0,
-            'qmin': "0,0,0",
-            'qmax': "0,0,0", 
-            'initqp': "0,0,0",
-            'cudacontext': cuda_ctx.handle,
-            'cudastream': cuda_stream.handle,
-            'enable_async': True,
-            'bRepeatSPSPPS': True
-        }
+    cuda_stream = cuda.Stream()
+    config_params = {
+        'gpuid': GPU_ID,
+        'codec': CODEC,
+        'preset': 'P3',
+        'tuning_info': 'low_latency',
+        'rc': 'cbr',
+        'fps': fps,
+        'gop': fps,
+        'bf': 0,
+        'bitrate': BITRATE,
+        'maxbitrate': 0,
+        'vbvinit': 0,
+        'vbvbufsize': 0,
+        'qmin': "0,0,0",
+        'qmax': "0,0,0", 
+        'initqp': "0,0,0",
+        'cudacontext': cuda_ctx.handle,
+        'cudastream': cuda_stream.handle,
+        'enable_async': True,
+        'bRepeatSPSPPS': True
+    }
 
-        nv_enc = nvc.CreateEncoder(
-            width,
-            height,
-            'NV12',
-            False,
-            **config_params
-        )
+    nv_enc = nvc.CreateEncoder(
+        width,
+        height,
+        'NV12',
+        False,
+        **config_params
+    )
 
-        for frame in frames:
-            # Specific to NV12 pixel format
-            frame_nv12 = frame.reshape((height * 3 // 2, width))
+    for frame in frames:
+        # Specific to NV12 pixel format
+        frame_nv12 = frame.reshape((height * 3 // 2, width))
 
-            # Wrap the frame to be compatible with the NVC method
-            frame_nv12 = FrameWrapper(frame_nv12)
-            
-            # Encode the frame into H264 bytes
-            encoded_bytes = nv_enc.Encode(frame_nv12)
-            
-            if encoded_bytes and len(encoded_bytes) > 0:
-                yield encoded_bytes
-
-
-        # Flush remaining packets
-        encoded_bytes = nv_enc.EndEncode()
+        # Wrap the frame to be compatible with the NVC method
+        frame_nv12 = FrameWrapper(frame_nv12)
+        
+        # Encode the frame into H264 bytes
+        encoded_bytes = nv_enc.Encode(frame_nv12)
+        
         if encoded_bytes and len(encoded_bytes) > 0:
             yield encoded_bytes
 
-        
 
-    except Exception as e:
-        print(f"Encoding failed: {e}")
+    # Flush remaining packets
+    encoded_bytes = nv_enc.EndEncode()
+    if encoded_bytes and len(encoded_bytes) > 0:
+        yield encoded_bytes
+
+
 
 
 
@@ -237,8 +226,6 @@ def mux(h264_stream: Generator[bytes, None, None], output_path: str) -> None:
 
     # Wait for FFmpeg to finish
     ffmpeg_process.wait()
-
-
 
 
 
