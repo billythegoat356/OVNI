@@ -31,7 +31,7 @@ def _load_kernel(filename: str, func_name: str) -> cp.RawKernel:
 _nv12_to_rgb_kernel = _load_kernel("pixfmt.cu", "nv12_to_rgb")
 _rgb_to_nv12_kernel = _load_kernel("pixfmt.cu", "rgb_to_nv12")
 
-_warp_affine_kernel = _load_kernel("warp.cu", "warp_affine")
+_scale_translate_kernel = _load_kernel("scale_translate.cu", "scale_translate")
 
 
 
@@ -150,29 +150,31 @@ def pipe_rgb_to_nv12(frames: Iterable[cp.ndarray], width: int, height: int) -> G
 
 
 
-def warp_affine(src: cp.ndarray, affine: cp.ndarray, dst_width: int, dst_height: int) -> cp.ndarray:
+def scale_translate(src: cp.ndarray, scale: float, tx: int, ty: int, dst_width: int, dst_height: int) -> cp.ndarray:
     """
-    Applies warp affine transform to an RGB image.
+    Applies scale and translation to an image.
 
     Parameters:
         src: cp.ndarray (H x W x 3), dtype=uint8
-        affine: cp.ndarray shape (6,), dtype=float32 (2x3 affine matrix flattened)
+        scale: float
+        tx: int
+        ty: int
         dst_width: int
         dst_height: int
 
     Returns:
         dst: cp.ndarray (dst_height x dst_width x 3), dtype=uint8
     """
-    assert src.dtype == cp.uint8
-    assert src.ndim == 3 and src.shape[2] == 3
-    assert affine.shape == (6,)
+    # Create output array
     dst = cp.empty((dst_height, dst_width, 3), dtype=cp.uint8)
 
+    # Define threads and blocks
     threads = (16, 16)
     blocks = ((dst_width + threads[0] - 1) // threads[0],
               (dst_height + threads[1] - 1) // threads[1])
 
-    _warp_affine_kernel(
+    # Call kernel
+    _scale_translate_kernel(
         blocks, threads,
         (
             src.ravel(),
@@ -181,7 +183,9 @@ def warp_affine(src: cp.ndarray, affine: cp.ndarray, dst_width: int, dst_height:
             dst.ravel(),
             cp.int32(dst_width),
             cp.int32(dst_height),
-            affine
+            cp.float32(float(scale)),
+            cp.int32(tx),
+            cp.int32(ty)
         )
     )
     return dst
