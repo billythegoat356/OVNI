@@ -5,6 +5,10 @@ import atexit
 import pycuda.driver as cuda
 import PyNvVideoCodec as nvc
 import cupy as cp
+import numpy as np
+from PIL import Image
+import cv2
+
 import pycuda.autoinit # Required
 
 
@@ -108,6 +112,30 @@ def demux_and_decode(input_path: str, frame_count: int | None = None) -> Generat
 
             passed_frames += 1
 
+
+
+def load_image(path: str) -> cp.ndarray:
+    """
+    Loads an image from a path inside a RGB cupy array
+
+    Parameters:
+        path: str
+
+    Returns:
+        cp.ndarray
+    """
+    # Load image with OpenCV (BGR format)
+    img_bgr = cv2.imread(path, cv2.IMREAD_COLOR)
+    if img_bgr is None:
+        raise FileNotFoundError(f"Image not found at path: {path}")
+
+    # Convert to CuPy array
+    cp_img = cp.asarray(img_bgr)
+
+    # Transform to RGB
+    img_rgb = cp_img[..., [2, 1, 0]]
+
+    return img_rgb
 
 
 

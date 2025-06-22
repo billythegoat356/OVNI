@@ -1,32 +1,30 @@
-from ovni.base import demux_and_decode, encode, mux
+from ovni.base import demux_and_decode, encode, mux, load_image
 from ovni.kernels import pipe_nv12_to_rgb, pipe_rgb_to_nv12
 
 
-def test():
+def test_image():
 
     import time
 
     start = time.time()
 
-    frames = demux_and_decode(
-        input_path="videos/video2.mp4",
-        frame_count=None
-    )
+    frame = load_image("videos/image.png")
+
+    print(frame.shape)
 
 
     t = 0
 
-    def process_frames(frames):
+    def process_frames(frame):
         nonlocal t
-        for frame in frames:
+        for _ in range(1000):
 
             yield frame
             t += 1
 
 
-    frames = pipe_nv12_to_rgb(frames, 1920, 1080)
 
-    frames = process_frames(frames)
+    frames = process_frames(frame)
 
     frames = pipe_rgb_to_nv12(frames, 1920, 1080)
 
@@ -53,4 +51,4 @@ def test():
 
 
 if __name__ == '__main__':
-    test()
+    test_image()
