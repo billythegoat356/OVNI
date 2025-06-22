@@ -237,6 +237,143 @@ def mux(h264_stream: Generator[bytes, None, None], output_path: str) -> None:
 
 
 
+
+
+
+nv12_to_rgb_kernel = cp.RawKernel(r'''
+extern "C" __global__
+void nv12_to_rgb(
+    const unsigned char* y_plane,
+    const unsigned char* uv_plane,
+    unsigned char* rgb,
+    int width,
+    int height
+) {
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (x >= width || y >= height) return;
+
+    int y_idx = y * width + x;
+    int uv_idx = (y / 2) * width + (x / 2) * 2;
+
+    float Y = (float)y_plane[y_idx];
+    float U = (float)uv_plane[uv_idx]     - 128.0f;
+    float V = (float)uv_plane[uv_idx + 1] - 128.0f;
+
+    // BT.709 full range (scale coefficients)
+    float R = Y + 1.5748f * V;
+    float G = Y - 0.1873f * U - 0.4681f * V;
+    float B = Y + 1.8556f * U;
+
+    R = min(max(R, 0.0f), 255.0f);
+    G = min(max(G, 0.0f), 255.0f);
+    B = min(max(B, 0.0f), 255.0f);
+
+    int rgb_idx = (y * width + x) * 3;
+    rgb[rgb_idx + 0] = (unsigned char)R;
+    rgb[rgb_idx + 1] = (unsigned char)G;
+    rgb[rgb_idx + 2] = (unsigned char)B;
+}
+''', 'nv12_to_rgb')
+
+
+def nv12_to_rgb(nv12_frame: cp.ndarray, width: int, height: int) -> cp.ndarray:
+    y_plane = nv12_frame[:width * height].reshape((height, width))
+    uv_plane = nv12_frame[width * height:].reshape((height // 2, width))
+
+    rgb = cp.empty((height, width, 3), dtype=cp.uint8)
+
+    threads = (16, 16)
+    blocks = ((width + threads[0] - 1) // threads[0],
+              (height + threads[1] - 1) // threads[1])
+
+    nv12_to_rgb_kernel(
+        blocks, threads,
+        (
+            y_plane.ravel(),
+            uv_plane.ravel(),
+            rgb.ravel(),
+            cp.int32(width),
+            cp.int32(height)
+        )
+    )
+    return rgb
+
+
+rgb_to_nv12_kernel = cp.RawKernel(r'''
+extern "C" __global__
+void rgb_to_nv12(
+    const unsigned char* rgb,
+    unsigned char* y_plane,
+    unsigned char* uv_plane,
+    int width,
+    int height
+) {
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (x >= width || y >= height) return;
+
+    int idx = (y * width + x) * 3;
+    float R = (float)rgb[idx + 0];
+    float G = (float)rgb[idx + 1];
+    float B = (float)rgb[idx + 2];
+
+    // BT.709 full range
+    float Y = 0.2126f * R + 0.7152f * G + 0.0722f * B;
+    float U = (B - Y) / 1.8556f + 128.0f;
+    float V = (R - Y) / 1.5748f + 128.0f;
+
+    Y = min(max(Y, 0.0f), 255.0f);
+    U = min(max(U, 0.0f), 255.0f);
+    V = min(max(V, 0.0f), 255.0f);
+
+    y_plane[y * width + x] = (unsigned char)(Y);
+
+    if ((x % 2 == 0) && (y % 2 == 0)) {
+        int uv_idx = (y / 2) * width + x;
+        uv_plane[uv_idx]     = (unsigned char)(U);
+        uv_plane[uv_idx + 1] = (unsigned char)(V);
+    }
+}
+''', 'rgb_to_nv12')
+
+
+def rgb_to_nv12(rgb: cp.ndarray, width: int, height: int) -> cp.ndarray:
+    y_plane = cp.empty((height, width), dtype=cp.uint8)
+    uv_plane = cp.zeros((height // 2, width), dtype=cp.uint8)
+
+    threads = (16, 16)
+    blocks = ((width + threads[0] - 1) // threads[0],
+              (height + threads[1] - 1) // threads[1])
+
+    rgb_to_nv12_kernel(
+        blocks, threads,
+        (
+            rgb.ravel(),
+            y_plane.ravel(),
+            uv_plane.ravel(),
+            cp.int32(width),
+            cp.int32(height)
+        )
+    )
+
+    return cp.concatenate((y_plane.ravel(), uv_plane.ravel()))
+
+
+def pipe_nv12_to_rgb(frames: Generator[cp.ndarray, None, None], width: int, height: int) -> Generator[cp.ndarray, None, None]:
+    for nv12_frame in frames:
+        rgb_frame = nv12_to_rgb(nv12_frame, width, height)
+        yield rgb_frame
+
+def pipe_rgb_to_nv12(frames: Generator[cp.ndarray, None, None], width: int, height: int) -> Generator[cp.ndarray, None, None]:
+    for rgb_frame in frames:
+        nv12_frame = rgb_to_nv12(rgb_frame, width, height)
+        yield nv12_frame
+
+
+
 def test():
 
     import time
@@ -254,12 +391,15 @@ def test():
         nonlocal t
         for frame in frames:
 
-            print(frame.shape)
-
             yield frame
             t += 1
 
+
+    frames = pipe_nv12_to_rgb(frames, 1920, 1080)
+
     frames = process_frames(frames)
+
+    frames = pipe_rgb_to_nv12(frames, 1920, 1080)
 
     h264_stream = encode(
         frames=frames,
