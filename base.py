@@ -1,5 +1,6 @@
 from typing import Generator
 import subprocess
+import atexit
 
 import pycuda.driver as cuda
 import PyNvVideoCodec as nvc
@@ -15,6 +16,11 @@ GPU_ID = 0
 CODEC = 'h264' # Encoding codec
 BITRATE = '5M'
 
+cuda_device = cuda.Device(GPU_ID)
+cuda_ctx = cuda_device.retain_primary_context()
+cuda_ctx.push()
+
+atexit.register(cuda_ctx.pop)
 
 
 
@@ -32,12 +38,8 @@ def demux_and_decode(input_path: str) -> Generator[cp.ndarray, None, None]:
     """
 
 
-    cuda_ctx = None
 
     try:
-        cuda_device = cuda.Device(GPU_ID)
-        cuda_ctx = cuda_device.retain_primary_context()
-        cuda_ctx.push()
         cuda_stream = cuda.Stream()
         nv_dmx = nvc.CreateDemuxer(filename=input_path)
 
@@ -94,9 +96,7 @@ def demux_and_decode(input_path: str) -> Generator[cp.ndarray, None, None]:
         print(f"CreateDecoder failure: {e}")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
-    finally:
-        if cuda_ctx is not None:
-            cuda_ctx.pop()
+
 
 
 
@@ -139,14 +139,8 @@ def encode(frames: Generator[cp.ndarray, None, None], width: int, height: int, f
             return self.arr.__dlpack__(stream=stream, **kwargs)
 
 
-    cuda_ctx = None
     try:
-        cuda_device = cuda.Device(GPU_ID)
-        cuda_ctx = cuda_device.retain_primary_context()
-        cuda_ctx.push()
-
         cuda_stream = cuda.Stream()
-
         config_params = {
             'gpuid': GPU_ID,
             'codec': CODEC,
@@ -200,9 +194,7 @@ def encode(frames: Generator[cp.ndarray, None, None], width: int, height: int, f
 
     except Exception as e:
         print(f"Encoding failed: {e}")
-    finally:
-        if cuda_ctx:
-            cuda_ctx.pop()
+
 
 
 
@@ -248,6 +240,11 @@ def mux(h264_stream: Generator[bytes, None, None], output_path: str) -> None:
 
 
 
+
+
+
+
+
 import time
 
 start = time.time()
@@ -290,3 +287,4 @@ print(f"Frames: {t}")
 d = t/25
 s = round(d/(time.time() - start), 2)
 print(f"Speed: x{s}")
+
