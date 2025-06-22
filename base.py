@@ -254,6 +254,8 @@ def test():
         nonlocal t
         for frame in frames:
 
+            print(frame.shape)
+
             yield frame
             t += 1
 
