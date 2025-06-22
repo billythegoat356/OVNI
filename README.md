@@ -8,7 +8,7 @@ The whole process is written in Python and follows a pipeline (generator) allowi
 I coded this in a few hours so there is definitely room for improvement, speed wise and code wise.   
     
 # How to use? 
-Just check the code inside `src/base.py`. If you need more help then this project is probably not for you.   
+Just check the code inside `ovni/base.py`. If you need more help then this project is probably not for you.   
 You can do **literally anything** you want directly on the CuPy arrays in GPU memory, and for a specific task you can write your own CUDA kernels or use the existing ones already made.   
 If you create one, feel free to make a pull request. (I won't accept it if the code is messy).   
 
