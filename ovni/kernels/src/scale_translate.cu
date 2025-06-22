@@ -15,9 +15,19 @@ void scale_translate(
 
     if (x >= dstw || y >= dsth) return;
 
+    // Destination
+    int flattened_coords = (y * dstw + x) * 3;
+
     // Calculate source coordinates from destination coordinates
     float sx = (x - tx) / scale;
     float sy = (y - ty) / scale;
+
+    if (sx < 0 || sx + 1 > srcw || sy < 0 || sy + 1 > srch) {
+        dst[flattened_coords] = (unsigned char)(0);
+        dst[flattened_coords + 1] = (unsigned char)(0);
+        dst[flattened_coords + 2] = (unsigned char)(0);
+        return;
+    }
 
     // Clamp to source image bounds
     sx = fmaxf(0.0f, fminf(sx, srcw - 1.0f));
@@ -55,7 +65,6 @@ void scale_translate(
     float B = B_top * (1 - y_cond) + B_bottom * y_cond;
 
     // Update in destination
-    int flattened_coords = (y * dstw + x) * 3;
     dst[flattened_coords] = (unsigned char)(roundf(R));
     dst[flattened_coords + 1] = (unsigned char)(roundf(G));
     dst[flattened_coords + 2] = (unsigned char)(roundf(B));

@@ -8,14 +8,13 @@ def test_image():
 
     start = time.time()
 
-    frame = load_image("videos/image.png", gpu=True)
+    frame = load_image("videos/image.png", gpu=False)
 
     print(frame.shape)
 
     import cupy as cp
     import cv2
 
-    frame = cp.asnumpy(frame)
 
     # Resize with OpenCV (size is (width, height))
     resized_np_img = cv2.resize(frame, (1920, 1080), interpolation=cv2.INTER_LINEAR)
@@ -23,7 +22,6 @@ def test_image():
     # Convert back to CuPy array (copies from CPU to GPU)
     frame = cp.asarray(resized_np_img)
 
-    print(frame.shape)
 
 
     t = 0
@@ -31,7 +29,7 @@ def test_image():
     def process_frames(frame):
         nonlocal t
         for _ in range(1000):
-            nframe = scale_translate(frame, 1.5, -300, -300, 1920, 1080)
+            nframe = scale_translate(frame, 1, 400, 400, 1920, 1080)
             yield nframe
             t += 1
 
