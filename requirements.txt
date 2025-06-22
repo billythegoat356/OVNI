@@ -1,0 +1,3 @@
+cupy-cuda12x==13.4.1 # Or whatever your version of CUDA is
+pycuda==2025.1.1
+PyNvVideoCodec==2.0.1
