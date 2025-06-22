@@ -1,5 +1,5 @@
 from ovni.base import demux_and_decode, encode, mux, load_image
-from ovni.kernels import pipe_nv12_to_rgb, pipe_rgb_to_nv12
+from ovni.kernels import pipe_nv12_to_rgb, pipe_rgb_to_nv12, warp_affine
 
 
 def test_image():
@@ -31,8 +31,11 @@ def test_image():
     def process_frames(frame):
         nonlocal t
         for _ in range(1000):
-
-            yield frame
+            affine = cp.array(
+                [0.8, 0, t, 
+                 0, 0.8, t], dtype=cp.float32)
+            nframe = warp_affine(frame, affine, 1920, 1080)
+            yield nframe
             t += 1
 
 
