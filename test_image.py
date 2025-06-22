@@ -8,7 +8,20 @@ def test_image():
 
     start = time.time()
 
-    frame = load_image("videos/image.png")
+    frame = load_image("videos/image.png", gpu=True)
+
+    print(frame.shape)
+
+    import cupy as cp
+    import cv2
+
+    frame = cp.asnumpy(frame)
+
+    # Resize with OpenCV (size is (width, height))
+    resized_np_img = cv2.resize(frame, (1920, 1080), interpolation=cv2.INTER_LINEAR)
+
+    # Convert back to CuPy array (copies from CPU to GPU)
+    frame = cp.asarray(resized_np_img)
 
     print(frame.shape)
 

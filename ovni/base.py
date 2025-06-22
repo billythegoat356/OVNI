@@ -114,12 +114,13 @@ def demux_and_decode(input_path: str, frame_count: int | None = None) -> Generat
 
 
 
-def load_image(path: str) -> cp.ndarray:
+def load_image(path: str, gpu: bool = True) -> cp.ndarray:
     """
-    Loads an image from a path inside a RGB cupy array
+    Loads an image from a path inside a RGB array
 
     Parameters:
         path: str
+        gpu: bool = True - whether to load the array on the GPU. If you want to do some one-time processing, you may want it on the CPU.
 
     Returns:
         cp.ndarray
@@ -129,11 +130,12 @@ def load_image(path: str) -> cp.ndarray:
     if img_bgr is None:
         raise FileNotFoundError(f"Image not found at path: {path}")
 
-    # Convert to CuPy array
-    cp_img = cp.asarray(img_bgr)
+    # Optionally load the array on the GPU with cupy
+    if gpu:
+        img_bgr = cp.asarray(img_bgr)
 
     # Transform to RGB
-    img_rgb = cp_img[..., [2, 1, 0]]
+    img_rgb = img_bgr[..., [2, 1, 0]]
 
     return img_rgb
 
