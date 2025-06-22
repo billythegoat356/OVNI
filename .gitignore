@@ -1,3 +1,7 @@
+# Utils folders
 videos/
 dl/
+
+# Python
 .venv/
+**/__pycache__/
