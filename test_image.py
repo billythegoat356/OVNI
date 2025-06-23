@@ -35,7 +35,7 @@ def test_image():
         # Combine RGB + alpha: assuming RGB channels are zeros for kframe
         kframe = cp.concatenate((frame, alpha_channel), axis=2)  # Shape: (height, width, 4)
 
-        for _ in range(100):
+        for _ in range(1000):
             nframe = frame.copy()
 
             x = 50 + (t / 3000 * 1920)

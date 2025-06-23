@@ -230,13 +230,14 @@ def encode(frames: Iterable[cp.ndarray], width: int, height: int, fps: int) -> G
 
 
 
-def mux(h264_stream: Iterable[bytes], output_path: str) -> None:
+def mux(h264_stream: Iterable[bytes], output_path: str, ffmpeg_flags: list[str] = []) -> None:
     """
     Takes an iterable of a H264 bytestream, and muxes it with a FFmpeg pipe in the output path
 
     Parameters:
         h264_stream: Iterable[bytes]
         output_path: str
+        ffmpeg_flags: list[str] = [] - additional ffmpeg flags
         
     Returns:
         None
@@ -247,8 +248,9 @@ def mux(h264_stream: Iterable[bytes], output_path: str) -> None:
         'ffmpeg',
         '-f', CODEC,            # Input format
         '-i', 'pipe:0',         # Read from stdin
-        '-c', 'copy',           # Copy without re-encoding
+        '-c:v', 'copy',         # Copy without re-encoding
         '-y',                   # Overwrite output
+        *ffmpeg_flags,
         output_path
     ]
 
