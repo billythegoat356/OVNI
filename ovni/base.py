@@ -12,7 +12,7 @@ import cv2
 import pycuda.autoinit # Required
 
 
-# Constants
+# Constants (adjust code if you need customzz)
 GPU_ID = 0
 CODEC = 'h264' # Encoding codec
 BITRATE = '5M'

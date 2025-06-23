@@ -6,32 +6,17 @@ import os
 import cupy as cp
 
 
-_cuda_src_dir = os.path.join(os.path.dirname(__file__), "src")
-
-def _load_kernel(filename: str, func_name: str) -> cp.RawKernel:
-    """
-    Given a filename and a function name, loads that kernel
-
-    Parameters:
-        filename: str
-        func_name: str
-
-    Returns:
-        cp.RawKernel
-    """
-
-    path = os.path.join(_cuda_src_dir, filename)
-    with open(path) as f:
-        code = f.read()
-    return cp.RawKernel(code, func_name)
+_cuda_comp_dir = os.path.join(os.path.dirname(__file__), "compiled")
 
 
-# Loading all kernels
+# Loading all functions
 
-_nv12_to_rgb_kernel = _load_kernel("pixfmt.cu", "nv12_to_rgb")
-_rgb_to_nv12_kernel = _load_kernel("pixfmt.cu", "rgb_to_nv12")
+mod = cp.RawModule(path=os.path.join(_cuda_comp_dir, "all_kernels.ptx"), backend='ptx')
 
-_scale_translate_kernel = _load_kernel("scale_translate.cu", "scale_translate")
+_nv12_to_rgb_kernel = mod.get_function("nv12_to_rgb")
+_rgb_to_nv12_kernel = mod.get_function("rgb_to_nv12")
+
+_scale_translate_kernel = mod.get_function("scale_translate")
 
 
 
