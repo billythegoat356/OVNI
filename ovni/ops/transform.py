@@ -288,53 +288,103 @@ def overlay(src: cp.ndarray, overlay_arr: cp.ndarray, x: int | float, y: int | f
                 src[top_y:bottom_y, left_x:right_x, :] = ksrc.reshape((overlay_h, overlay_w, -1))
 
 
-def blend(src: cp.ndarray, overlay: cp.ndarray, x: int, y: int) -> None:
+def blend(src: cp.ndarray, overlay_arr: cp.ndarray, x: int | float, y: int | float) -> None:
     """
     Blend an overlay on a frame, with custom alpha channel for each pixel.
+    Non integer position is allowed, in this case the image will be interpolated.
+    Modifies it in place
 
     Parameters:
         src: cp.ndarray of 3 channels, RGB
-        overlay: cp.ndarray of 4 channels, RGBA
-        x: int
-        y: int
+        overlay_arr: cp.ndarray of 4 channels, RGBA
+        x: int | float
+        y: int | float
 
     Returns:
         None
     """
 
-    # Calculate coords box
-    top_y = y
-    bottom_y = top_y+overlay.shape[0]
-    left_x = x
-    right_x = left_x+overlay.shape[1]
+    width = src.shape[1]
+    height = src.shape[0]
+
+    # Calculate coords box - from where to where the overlay should be put
+    top_y = int(y)
+    bottom_y = top_y+overlay_arr.shape[0]
+    left_x = int(x)
+    right_x = left_x+overlay_arr.shape[1]
 
     # Make sure coords aren't bigger than the source
-    bottom_y = min(src.shape[0], bottom_y)
-    right_x = min(src.shape[1], right_x)
+    right_x = min(width, right_x)
+    bottom_y = min(height, bottom_y)
 
     # Clip overlay to fit in the coords
     overlay_w = right_x - left_x
     overlay_h = bottom_y - top_y
+    clipped_overlay = crop(overlay_arr, 0, overlay_w, 0, overlay_h)
 
-    clipped_overlay = crop(overlay, 0, overlay_w, 0, overlay_h)
+    if x != int(x) or y != int(y):
+        # Floats passed, requires interpolation
+        x_distance = x - int(x)
+        y_distance = y - int(y)
 
-    blocks = make_blocks(overlay_w, overlay_h)
+        # Clip the source for the area containing the 4 positions of the overlay
+        clipped_src = crop(src, left_x, min(width, right_x+1), top_y, min(height, bottom_y+1))
 
-    # Ravel the source and overlay where it needs overlaying
-    region = src[top_y:bottom_y, left_x:right_x, :]
-    ksrc = region.ravel()
-    koverlay = clipped_overlay.ravel()
+        if x != int(x) and y != int(y):
+            # Requires interpolation on both axis
+            top_left = clipped_src.copy()
+            top_right = clipped_src.copy()
 
-    Kernels.blend(
-        blocks, THREADS,
-        (
-            ksrc,
-            koverlay,
-            cp.int32(overlay_w),
-            cp.int32(overlay_h)
+            bottom_left = clipped_src.copy()
+            bottom_right = clipped_src.copy()
+
+            blend(top_left, clipped_overlay, 0, 0)
+            blend(top_right, clipped_overlay, 1, 0)
+
+            blend(bottom_left, clipped_overlay, 0, 1)
+            blend(bottom_right, clipped_overlay, 1, 1)
+
+        elif y != int(y):
+            # Requires interpolation only on Y axis
+            top_left = top_right = clipped_src.copy()
+            bottom_left = bottom_right = clipped_src.copy()
+
+            blend(top_left, clipped_overlay, 0, 0)
+            blend(bottom_left, clipped_overlay, 0, 1)
+
+        else:
+            # Requires interpolation only on X axis
+            top_left = bottom_left = clipped_src.copy()
+            top_right = bottom_right = clipped_src.copy()
+
+            blend(top_left, clipped_overlay, 0, 0)
+            blend(top_right, clipped_overlay, 1, 0)
+
+
+        arr = bilinear(
+            top_left, top_right, bottom_left, bottom_right,
+            x_distance, y_distance
         )
-    )
+        overlay(src, arr, left_x, top_y) # No alpha now
 
-    if not region.flags['C_CONTIGUOUS']:
-        # Only assign back if ravel created a copy (non-contiguous slice)
-        src[top_y:bottom_y, left_x:right_x, :] = ksrc.reshape((overlay_h, overlay_w, -1))
+    else:
+        blocks = make_blocks(overlay_w, overlay_h)
+
+        # Ravel the source and overlay where it needs overlaying
+        region = src[top_y:bottom_y, left_x:right_x, :]
+        ksrc = region.ravel()
+        koverlay = clipped_overlay.ravel()
+
+        Kernels.blend(
+            blocks, THREADS,
+            (
+                ksrc,
+                koverlay,
+                cp.int32(overlay_w),
+                cp.int32(overlay_h)
+            )
+        )
+
+        if not region.flags['C_CONTIGUOUS']:
+            # Only assign back if ravel created a copy (non-contiguous slice)
+            src[top_y:bottom_y, left_x:right_x, :] = ksrc.reshape((overlay_h, overlay_w, -1))

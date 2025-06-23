@@ -23,16 +23,28 @@ def test_image():
 
     def process_frames(frame):
         nonlocal t
+        height, width, _ = frame.shape
+
+        # Create an alpha gradient from 0 to 255 over the width
+        alpha_channel = cp.linspace(0, 255, width, dtype=cp.uint8)
+        alpha_channel = cp.tile(alpha_channel, (height, 1))  # Shape: (height, width)
+
+        # Expand dims to (height, width, 1)
+        alpha_channel = cp.expand_dims(alpha_channel, axis=2)
+
+        # Combine RGB + alpha: assuming RGB channels are zeros for kframe
+        kframe = cp.concatenate((frame, alpha_channel), axis=2)  # Shape: (height, width, 4)
+
         for _ in range(100):
             nframe = frame.copy()
 
-            x = 50+(t/3000*1920)
-            y = 50+(t/3000*1080)
+            x = 50 + (t / 3000 * 1920)
+            y = 50 + (t / 3000 * 1080)
 
-            x = int(x)
-            y = int(y)
+            # x = int(x)
+            # y = int(y)
 
-            overlay(nframe, frame, x,y)
+            blend(nframe, kframe, x, y)
             yield nframe
             t += 1
 
