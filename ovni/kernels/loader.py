@@ -15,3 +15,4 @@ class Kernels:
     rgb_to_nv12 = mod.get_function("rgb_to_nv12")
 
     scale_translate = mod.get_function("scale_translate")
+    resize = mod.get_function("resize")

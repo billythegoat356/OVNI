@@ -2,8 +2,7 @@ from typing import Iterable, Generator
 
 import cupy as cp
 
-from ..kernels.loader import Kernels
-
+from ..kernels import Kernels, THREADS, make_blocks
 
 
 
@@ -27,14 +26,11 @@ def nv12_to_rgb(nv12_frame: cp.ndarray, width: int, height: int) -> cp.ndarray:
     # Create empty cupy array
     rgb_frame = cp.empty((height, width, 3), dtype=cp.uint8)
 
-    # Define threads and blocks for kernel call
-    threads = (16, 16)
-    blocks = ((width + threads[0] - 1) // threads[0],
-              (height + threads[1] - 1) // threads[1])
+    blocks = make_blocks(width, height)
 
     # Call the kernel
     Kernels.nv12_to_rgb(
-        blocks, threads,
+        blocks, THREADS,
         (
             y_plane,
             uv_plane,
@@ -47,31 +43,30 @@ def nv12_to_rgb(nv12_frame: cp.ndarray, width: int, height: int) -> cp.ndarray:
 
 
 
-def rgb_to_nv12(rgb_frame: cp.ndarray, width: int, height: int) -> cp.ndarray:
+def rgb_to_nv12(rgb_frame: cp.ndarray) -> cp.ndarray:
     """
     Converts a frame from RGB pixel format to *flattened* NV12
     You usually want that for encoding
 
     Parameters:
         rgb_frame: cp.ndarray
-        width: int
-        height: int
 
     Returns:
         cp.ndarray
     """
+    # Data is not flattened, we can access width and height with the shape
+    width = rgb_frame.shape[1]
+    height = rgb_frame.shape[0]
+
     # Create empty cupy arrays for Y and UV planes
     y_plane = cp.empty((height * width), dtype=cp.uint8)
     uv_plane = cp.zeros((height // 2 * width), dtype=cp.uint8)
 
-    # Define threads and blocks for kernel call
-    threads = (16, 16)
-    blocks = ((width + threads[0] - 1) // threads[0],
-              (height + threads[1] - 1) // threads[1])
+    blocks = make_blocks(width, height)
 
     # Call the kernel
     Kernels.rgb_to_nv12(
-        blocks, threads,
+        blocks, THREADS,
         (
             rgb_frame.ravel(),
             y_plane,
@@ -103,20 +98,18 @@ def pipe_nv12_to_rgb(frames: Iterable[cp.ndarray], width: int, height: int) -> G
         rgb_frame = nv12_to_rgb(nv12_frame, width, height)
         yield rgb_frame
 
-def pipe_rgb_to_nv12(frames: Iterable[cp.ndarray], width: int, height: int) -> Generator[cp.ndarray, None, None]:
+def pipe_rgb_to_nv12(frames: Iterable[cp.ndarray]) -> Generator[cp.ndarray, None, None]:
     """
     Pipes frames from RGB pixel format to *flattened* NV12
 
     Parameters:
         frames: Iterable[cp.ndarray] - can take an iterable but you usually want to pass a generator
-        width: int
-        height: int
 
     Returns:
         Generator[cp.ndarray, None, None]
     """
     for rgb_frame in frames:
-        nv12_frame = rgb_to_nv12(rgb_frame, width, height)
+        nv12_frame = rgb_to_nv12(rgb_frame)
         yield nv12_frame
 
 

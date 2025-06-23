@@ -27,7 +27,7 @@ def test_video():
 
     frames = process_frames(frames)
 
-    frames = pipe_rgb_to_nv12(frames, 1920, 1080)
+    frames = pipe_rgb_to_nv12(frames)
 
     h264_stream = encode(
         frames=frames,

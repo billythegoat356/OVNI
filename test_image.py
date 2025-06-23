@@ -1,5 +1,5 @@
 from ovni.base import demux_and_decode, encode, mux, load_image
-from ovni.ops import pipe_nv12_to_rgb, pipe_rgb_to_nv12, scale_translate
+from ovni.ops import pipe_nv12_to_rgb, pipe_rgb_to_nv12, scale_translate, resize
 
 
 def test_image():
@@ -8,20 +8,14 @@ def test_image():
 
     start = time.time()
 
-    frame = load_image("videos/image.png", gpu=False)
+    frame = load_image("videos/image.png", gpu=True)
 
     print(frame.shape)
 
-    import cupy as cp
-    import cv2
 
+    frame = resize(frame, 1920, 1080)
 
-    # Resize with OpenCV (size is (width, height))
-    resized_np_img = cv2.resize(frame, (1920, 1080), interpolation=cv2.INTER_LINEAR)
-
-    # Convert back to CuPy array (copies from CPU to GPU)
-    frame = cp.asarray(resized_np_img)
-
+    print(frame.shape)
 
 
     t = 0
@@ -38,7 +32,7 @@ def test_image():
 
     frames = process_frames(frame)
 
-    frames = pipe_rgb_to_nv12(frames, 1920, 1080)
+    frames = pipe_rgb_to_nv12(frames)
 
     h264_stream = encode(
         frames=frames,
