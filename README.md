@@ -6,6 +6,13 @@ Demuxing/decoding happens on the GPU thanks to NVC (PyNvVideoCodec), frames are 
 The whole process is written in Python and follows a pipeline (generator) allowing to keep it simple and suitable for real-time tasks.   
 
 I coded this in a few hours so there is definitely room for improvement, speed wise and code wise.   
+
+# Requirements
+- A Nvidia graphics card
+- CUDA driver & toolkit
+- requirements.txt (you can either build cupy yourself or install a prebuilt version, but check your CUDA driver version for this)
+- Edit the Makefile to contain your GPU Cuda architecture, check [this](https://developer.nvidia.com/cuda-gpus)
+- libass.c (only if you plan on using Advanced SubStation Alpha captions)
     
 # How to use? 
 Just check the code inside `ovni/base.py`. If you need more help then this project is probably not for you.   
