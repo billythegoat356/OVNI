@@ -19,6 +19,14 @@ Just check the code inside `ovni/base.py`. If you need more help then this proje
 You can do **literally anything** you want directly on the CuPy arrays in GPU memory, and for a specific task you can write your own CUDA kernels or use the existing ones already made.   
 If you create one, feel free to make a pull request. (I won't accept it if the code is messy).   
 
+# Todo
+
+- Add `make_transparent` kernel that creates RGBA frame from image with specific color turned into transparency (e.g., green screen)
+⏳ - Add support for captions with libASS
+- Add kernel `blend_transparent` to blend two RGBA frames (required by libASS)
+- Add support for audio stream in FFmpeg muxing
+
+
 # Benchmarks
 On my RTX 4080 Super, I achieve a speed of around **600 frames per second** without any operations on the frames, when decoding and encoding directly.   
 Note that if written correctly, the operations should be nearly instantaneous.   
