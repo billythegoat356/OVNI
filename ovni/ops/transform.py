@@ -177,7 +177,9 @@ def overlay(src: cp.ndarray, overlay: cp.ndarray, x: int, y: int, alpha: float =
         blocks = make_blocks(overlay_w, overlay_h)
 
         # Ravel the source and overlay where it needs overlaying
-        ksrc = src[top_y:bottom_y, left_x:right_x, :].ravel()
+        region = src[top_y:bottom_y, left_x:right_x, :]
+
+        ksrc = region.ravel()
         koverlay = clipped_overlay.ravel()
 
         Kernels.overlay_opacity(
@@ -191,5 +193,9 @@ def overlay(src: cp.ndarray, overlay: cp.ndarray, x: int, y: int, alpha: float =
             )
         )
 
-        # Update it, ksrc is not contiguous so it created a copy
-        src[top_y:bottom_y, left_x:right_x, :] = ksrc.reshape((overlay_h, overlay_w, -1))
+        if not region.flags['C_CONTIGUOUS']:
+            # Only assign back if ravel created a copy (non-contiguous slice)
+            src[top_y:bottom_y, left_x:right_x, :] = ksrc.reshape((overlay_h, overlay_w, -1))
+
+
+# def blend(src: cp.ndarray, overlay: cp.ndarray, x: int, y: int)
