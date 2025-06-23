@@ -19,3 +19,4 @@ class Kernels:
     scale_translate = mod.get_function("scale_translate")
     resize = mod.get_function("resize")
     overlay_opacity = mod.get_function("overlay_opacity")
+    blend = mod.get_function("blend")

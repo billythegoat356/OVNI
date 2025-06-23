@@ -97,3 +97,33 @@ void overlay_opacity(
     src[flattened_coords + 1] = G;
     src[flattened_coords + 2] = B;
 }
+
+
+extern "C" __global__
+void blend(
+    unsigned char* src,
+    const unsigned char* overlay,
+    int width,
+    int height
+) {
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (x >= width || y >= height) return;
+
+    // Destination
+    int ov_flattened_coords = (y * width + x) * 4;
+    int src_flattened_coords = (y * width + x) * 3;
+
+    // Get average values with the opacity
+    float opacity = float(overlay[ov_flattened_coords + 3]) / 255.0f;
+
+    unsigned char R = overlay[ov_flattened_coords] * opacity + src[src_flattened_coords] * (1 - opacity);
+    unsigned char G = overlay[ov_flattened_coords + 1] * opacity + src[src_flattened_coords + 1] * (1 - opacity);
+    unsigned char B = overlay[ov_flattened_coords + 2] * opacity + src[src_flattened_coords + 2] * (1 - opacity);
+
+    // Update in source
+    src[src_flattened_coords] = R;
+    src[src_flattened_coords + 1] = G;
+    src[src_flattened_coords + 2] = B;
+}
