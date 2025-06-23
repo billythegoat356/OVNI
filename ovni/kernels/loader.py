@@ -20,3 +20,6 @@ class Kernels:
     resize = mod.get_function("resize")
     overlay_opacity = mod.get_function("overlay_opacity")
     blend = mod.get_function("blend")
+
+    # Interpolation
+    bilinear = mod.get_function("bilinear")

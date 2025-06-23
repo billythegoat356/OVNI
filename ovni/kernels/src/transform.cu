@@ -1,4 +1,3 @@
-# include "interpolation.cu"
 
 extern "C" __global__
 void scale_translate(
@@ -28,7 +27,7 @@ void scale_translate(
     unsigned char G;
     unsigned char B;
 
-    bilinear(src, srcw, srch, sx, sy, &R, &G, &B);
+    bilinear_one(src, srcw, srch, sx, sy, &R, &G, &B);
 
     // Update in destination
     dst[flattened_coords] = R;
@@ -62,7 +61,7 @@ void resize(
     unsigned char G;
     unsigned char B;
 
-    bilinear(src, srcw, srch, sx, sy, &R, &G, &B);
+    bilinear_one(src, srcw, srch, sx, sy, &R, &G, &B);
 
     // Update in destination
     dst[flattened_coords] = R;

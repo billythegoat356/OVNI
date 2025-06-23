@@ -1,7 +1,7 @@
 import cupy as cp
 
 from ..kernels import Kernels, THREADS, make_blocks
-
+from .interpolation import bilinear
 
 
 
@@ -119,24 +119,76 @@ def resize(src: cp.ndarray, dst_width: int, dst_height: int) -> cp.ndarray:
 
 
 
-def crop(src: cp.ndarray, left_x: int, right_x: int, top_y: int, bottom_y: int) -> cp.ndarray:
+def crop(src: cp.ndarray, left: int | float, right: int | float, top: int | float, bottom: int | float) -> cp.ndarray:
     """
     Crop the array in a specific box
     NOTE: This does not use a custom kernel, it just slices the array. We define it this way for abstraction.
 
     Left and top are included, right and bottom are excluded.
 
+    Coordinates may be floats, this would allow bilinear interpolation
+
     Parameters:
         src: cp.ndarray
-        left_x: int
-        right_x: int
-        top_y: int
-        bottom_y: int
+        left: int | float
+        right: int | float
+        top: int | float
+        bottom: int | float
 
     Returns:
         cp.ndarray
     """
-    return src[top_y:bottom_y, left_x:right_x, :]
+
+    # Verify that if floats are being passed, they allow forming a box
+    diff_x = right - left
+    diff_y = bottom - top
+
+    assert int(diff_x) == diff_x and int(diff_y) == diff_y, "If floats are passed, make sure that they form an integer box"
+
+    if left == int(left) and top == int(top):
+        # Normal crop
+        return src[top:bottom, left:right, :]
+    
+    else:
+        # Requires interpolation of at least one axis
+        x_distance = left - int(left)
+        y_distance = top - int(top)
+
+        left1 = int(left)
+        left2 = left1 + 1
+
+        right1 = int(right)
+        right2 = right1 + 1
+
+        top1 = int(top)
+        top2 = top1 + 1
+
+        bottom1 = int(bottom)
+        bottom2 = bottom1 + 1
+
+        if top != int(top) and left != int(left):
+            # Requires interpolation on both axis
+            top_left = src[top1:bottom1, left1:right1, :]
+            top_right = src[top1:bottom1, left2:right2, :]
+
+            bottom_left = src[top2:bottom2, left1:right1, :]
+            bottom_right = src[top2:bottom2, left2:right2, :]
+
+        elif top != int(top):
+            # Requires interpolation only on Y axis
+            top_left = top_right = src[top1:bottom1, left1:right1, :]
+            bottom_left = bottom_right = src[top2:bottom2, left1:right1, :]
+
+        else:
+            # Requires interpolation only on X axis
+            top_left = bottom_left = src[top1:bottom1, left1:right1, :]
+            top_right = bottom_right = src[top1:bottom1, left2:right2, :]
+
+
+        return bilinear(
+            top_left, top_right, bottom_left, bottom_right,
+            x_distance, y_distance
+        )
 
 
 

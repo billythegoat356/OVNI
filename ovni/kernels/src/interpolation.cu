@@ -1,7 +1,7 @@
 
 
 __device__
-void bilinear(
+void bilinear_one(
     const unsigned char* src,
     int width,
     int height,
@@ -55,4 +55,58 @@ void bilinear(
     *G = roundf(G_top * (1 - y_cond) + G_bottom * y_cond);
     *B = roundf(B_top * (1 - y_cond) + B_bottom * y_cond);
 
+}
+
+
+extern "C" __global__
+void bilinear(
+    unsigned char* dst,
+    const unsigned char* top_left,
+    const unsigned char* top_right,
+    const unsigned char* bottom_left,
+    const unsigned char* bottom_right,
+    int width,
+    int height,
+    float x_distance,
+    float y_distance
+) {
+
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (x >= width || y >= height) return;
+
+    int coords = (y * width + x) * 3;
+
+    float R;
+    float G;
+    float B;
+
+    // If the X distance doesnt change, calculate distance of Y axis matrixes
+    if (x_distance == int(x_distance)) {
+        R = top_left[coords] * (1 - y_distance) + bottom_left[coords] * y_distance;
+        G = top_left[coords + 1] * (1 - y_distance) + bottom_left[coords + 1] * y_distance;
+        B = top_left[coords + 2] * (1 - y_distance) + bottom_left[coords + 2] * y_distance;
+    }
+    // Otherwise, always calculate X distance
+    else {
+        R = top_left[coords] * (1 - x_distance) + top_right[coords] * x_distance;
+        G = top_left[coords + 1] * (1 - x_distance) + top_right[coords + 1] * x_distance;
+        B = top_left[coords + 2] * (1 - x_distance) + top_right[coords + 2] * x_distance;
+
+        // If we must also calculate Y distance, do it
+        if (y_distance != int(y_distance)) {
+            float R2 = bottom_left[coords] * (1 - x_distance) + bottom_right[coords] * x_distance;
+            float G2 = bottom_left[coords + 1] * (1 - x_distance) + bottom_right[coords + 1] * x_distance;
+            float B2 = bottom_left[coords + 2] * (1 - x_distance) + bottom_right[coords + 2] * x_distance;
+
+            R = R * (1 - y_distance) + R2 * y_distance;
+            G = G * (1 - y_distance) + G2 * y_distance;
+            B = B * (1 - y_distance) + B2 * y_distance;
+        }
+    }
+
+    dst[coords] = (unsigned char)(R);
+    dst[coords + 1] = (unsigned char)(G);
+    dst[coords + 2] = (unsigned char)(B);
 }
