@@ -558,4 +558,76 @@ $L__BB3_4:
 	ret;
 
 }
+	// .globl	overlay_opacity
+.visible .entry overlay_opacity(
+	.param .u64 overlay_opacity_param_0,
+	.param .u64 overlay_opacity_param_1,
+	.param .u32 overlay_opacity_param_2,
+	.param .u32 overlay_opacity_param_3,
+	.param .f32 overlay_opacity_param_4
+)
+{
+	.reg .pred 	%p<4>;
+	.reg .b16 	%rs<7>;
+	.reg .f32 	%f<16>;
+	.reg .b32 	%r<16>;
+	.reg .b64 	%rd<8>;
+
+
+	ld.param.u64 	%rd1, [overlay_opacity_param_0];
+	ld.param.u64 	%rd2, [overlay_opacity_param_1];
+	ld.param.u32 	%r3, [overlay_opacity_param_2];
+	ld.param.u32 	%r4, [overlay_opacity_param_3];
+	ld.param.f32 	%f1, [overlay_opacity_param_4];
+	mov.u32 	%r5, %ntid.x;
+	mov.u32 	%r6, %ctaid.x;
+	mov.u32 	%r7, %tid.x;
+	mad.lo.s32 	%r1, %r6, %r5, %r7;
+	mov.u32 	%r8, %ntid.y;
+	mov.u32 	%r9, %ctaid.y;
+	mov.u32 	%r10, %tid.y;
+	mad.lo.s32 	%r2, %r9, %r8, %r10;
+	setp.ge.s32 	%p1, %r1, %r3;
+	setp.ge.s32 	%p2, %r2, %r4;
+	or.pred  	%p3, %p1, %p2;
+	@%p3 bra 	$L__BB4_2;
+
+	mad.lo.s32 	%r11, %r2, %r3, %r1;
+	mul.lo.s32 	%r12, %r11, 3;
+	cvt.s64.s32 	%rd3, %r12;
+	cvta.to.global.u64 	%rd4, %rd2;
+	add.s64 	%rd5, %rd4, %rd3;
+	ld.global.u8 	%rs1, [%rd5];
+	cvt.rn.f32.u16 	%f2, %rs1;
+	cvta.to.global.u64 	%rd6, %rd1;
+	add.s64 	%rd7, %rd6, %rd3;
+	ld.global.u8 	%rs2, [%rd7];
+	cvt.rn.f32.u16 	%f3, %rs2;
+	mov.f32 	%f4, 0f3F800000;
+	sub.f32 	%f5, %f4, %f1;
+	mul.f32 	%f6, %f5, %f3;
+	fma.rn.f32 	%f7, %f2, %f1, %f6;
+	cvt.rzi.u32.f32 	%r13, %f7;
+	ld.global.u8 	%rs3, [%rd5+1];
+	cvt.rn.f32.u16 	%f8, %rs3;
+	ld.global.u8 	%rs4, [%rd7+1];
+	cvt.rn.f32.u16 	%f9, %rs4;
+	mul.f32 	%f10, %f5, %f9;
+	fma.rn.f32 	%f11, %f8, %f1, %f10;
+	cvt.rzi.u32.f32 	%r14, %f11;
+	ld.global.u8 	%rs5, [%rd5+2];
+	cvt.rn.f32.u16 	%f12, %rs5;
+	ld.global.u8 	%rs6, [%rd7+2];
+	cvt.rn.f32.u16 	%f13, %rs6;
+	mul.f32 	%f14, %f5, %f13;
+	fma.rn.f32 	%f15, %f12, %f1, %f14;
+	cvt.rzi.u32.f32 	%r15, %f15;
+	st.global.u8 	[%rd7], %r13;
+	st.global.u8 	[%rd7+1], %r14;
+	st.global.u8 	[%rd7+2], %r15;
+
+$L__BB4_2:
+	ret;
+
+}
 

@@ -69,3 +69,31 @@ void resize(
     dst[flattened_coords + 1] = G;
     dst[flattened_coords + 2] = B;
 }
+
+
+extern "C" __global__
+void overlay_opacity(
+    unsigned char* src,
+    const unsigned char* overlay,
+    int width,
+    int height,
+    float opacity
+) {
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (x >= width || y >= height) return;
+
+    // Destination
+    int flattened_coords = (y * width + x) * 3;
+
+    // Get average values with the opacity
+    unsigned char R = overlay[flattened_coords] * opacity + src[flattened_coords] * (1 - opacity);
+    unsigned char G = overlay[flattened_coords + 1] * opacity + src[flattened_coords + 1] * (1 - opacity);
+    unsigned char B = overlay[flattened_coords + 2] * opacity + src[flattened_coords + 2] * (1 - opacity);
+
+    // Update in source
+    src[flattened_coords] = R;
+    src[flattened_coords + 1] = G;
+    src[flattened_coords + 2] = B;
+}

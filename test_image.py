@@ -25,7 +25,7 @@ def test_image():
         nonlocal t
         for _ in range(1000):
             nframe = frame.copy()
-            overlay(nframe, ov, t, t, 1)
+            overlay(nframe, ov, t, t, 0.9)
             # nframe = scale_translate(frame, 1, t, t, 1920, 1080)
             # nframe = scale_translate(frame, 1+(t/1000), 0, 0, 1920, 1080)
             yield nframe

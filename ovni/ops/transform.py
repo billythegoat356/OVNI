@@ -48,7 +48,7 @@ def scale_translate(src: cp.ndarray, scale: float, tx: int, ty: int, dst_width: 
             dst.ravel(),
             cp.int32(dst_width),
             cp.int32(dst_height),
-            cp.float32(float(scale)),
+            cp.float32(scale),
             cp.int32(tx),
             cp.int32(ty)
         )
@@ -152,27 +152,44 @@ def overlay(src: cp.ndarray, overlay: cp.ndarray, x: int, y: int, alpha: float =
         y: int
         alpha: float = 1
     """
+
+    # Calculate coords box
+    top_y = y
+    bottom_y = top_y+overlay.shape[0]
+    left_x = x
+    right_x = left_x+overlay.shape[1]
+
+    # Make sure coords aren't bigger than the source
+    bottom_y = min(src.shape[0], bottom_y)
+    right_x = min(src.shape[1], right_x)
+
+    # Clip overlay to fit in the coords
+    overlay_w = right_x - left_x
+    overlay_h = bottom_y - top_y
+
+    clipped_overlay = crop(overlay, 0, overlay_w, 0, overlay_h)
+    
     if alpha == 1:
         # Overlay is fully opaque, we can simply replace the pixels
-
-        # Calculate coords box
-        top_y = y
-        bottom_y = top_y+overlay.shape[0]
-        left_x = x
-        right_x = left_x+overlay.shape[1]
-
-        # Make sure coords aren't bigger than the source
-        bottom_y = min(src.shape[0], bottom_y)
-        right_x = min(src.shape[1], right_x)
-
-        # Clip overlay to fit in the coords
-        overlay_w = right_x - left_x
-        overlay_h = bottom_y - top_y
-
-        cropped_overlay = crop(overlay, 0, overlay_w, 0, overlay_h)
-
-        src[top_y:bottom_y, left_x:right_x, :] = cropped_overlay
+        src[top_y:bottom_y, left_x:right_x, :] = clipped_overlay
     else:
         # We have to use a custom kernel
-        ...
+        blocks = make_blocks(overlay_w, overlay_h)
 
+        # Ravel the source and overlay where it needs overlaying
+        ksrc = src[top_y:bottom_y, left_x:right_x, :].ravel()
+        koverlay = clipped_overlay.ravel()
+
+        Kernels.overlay_opacity(
+            blocks, THREADS,
+            (
+                ksrc,
+                koverlay,
+                cp.int32(overlay_w),
+                cp.int32(overlay_h),
+                cp.float32(alpha)
+            )
+        )
+
+        # Update it, ksrc is not contiguous so it created a copy
+        src[top_y:bottom_y, left_x:right_x, :] = ksrc.reshape((overlay_h, overlay_w, -1))
