@@ -1,5 +1,5 @@
 from ovni.base import demux_and_decode, encode, mux, load_image
-from ovni.ops import pipe_nv12_to_rgb, pipe_rgb_to_nv12, scale_translate, resize
+from ovni.ops import *
 
 
 def test_image():
@@ -13,7 +13,8 @@ def test_image():
     print(frame.shape)
 
 
-    frame = resize(frame, 1920, 1080)
+    frame = crop(frame, 0, 1920, 0, 1080)
+    # frame = resize(frame, 1920, 1080)
 
     print(frame.shape)
 
@@ -23,7 +24,7 @@ def test_image():
     def process_frames(frame):
         nonlocal t
         for _ in range(1000):
-            nframe = scale_translate(frame, 1.2, -1*t, -1*t)
+            nframe = scale_translate(frame, 1, t, t, 1920, 1080)
             # nframe = scale_translate(frame, 1+(t/1000), 0, 0, 1920, 1080)
             yield nframe
             t += 1

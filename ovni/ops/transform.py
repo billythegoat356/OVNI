@@ -117,3 +117,23 @@ def resize(src: cp.ndarray, dst_width: int, dst_height: int) -> cp.ndarray:
     )
     return dst
 
+
+
+def crop(src: cp.ndarray, left_x: int, right_x: int, top_y: int, bottom_y: int) -> cp.ndarray:
+    """
+    Crop the array in a specific box
+    NOTE: This does not use a custom kernel, it just slices the array. We define it this way for abstraction.
+
+    Left and top are included, right and bottom are excluded.
+
+    Parameters:
+        src: cp.ndarray
+        left_x: int
+        right_x: int
+        top_y: int
+        bottom_y: int
+
+    Returns:
+        cp.ndarray
+    """
+    return src[top_y:bottom_y, left_x:right_x, :]
