@@ -1,5 +1,5 @@
 from ovni.base import demux_and_decode, encode, mux, load_image
-from ovni.kernels import pipe_nv12_to_rgb, pipe_rgb_to_nv12, scale_translate
+from ovni.ops import pipe_nv12_to_rgb, pipe_rgb_to_nv12, scale_translate
 
 
 def test_image():

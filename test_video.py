@@ -1,5 +1,5 @@
 from ovni.base import demux_and_decode, encode, mux
-from ovni.kernels import pipe_nv12_to_rgb, pipe_rgb_to_nv12
+from ovni.ops import pipe_nv12_to_rgb, pipe_rgb_to_nv12
 
 
 def test_video():
