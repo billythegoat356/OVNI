@@ -166,55 +166,17 @@ def crop(src: cp.ndarray, left: int | float, right: int | float, top: int | floa
     """
 
     # Verify that if floats are being passed, they allow forming a box
-    diff_x = right - left
-    diff_y = bottom - top
+    width = right - left
+    height = bottom - top
 
-    assert int(diff_x) == diff_x and int(diff_y) == diff_y, "If floats are passed, make sure that they form an integer box"
+    assert abs(round(width)-width) < 10e-5 and abs(round(height)-height) < 10e-5, "If floats are passed, make sure that they form an integer box"
 
     if left == int(left) and top == int(top):
         # Normal crop
         return src[top:bottom, left:right, :]
     
     else:
-        # Requires interpolation of at least one axis
-        x_distance = left - int(left)
-        y_distance = top - int(top)
-
-        left1 = int(left)
-        left2 = left1 + 1
-
-        right1 = int(right)
-        right2 = right1 + 1
-
-        top1 = int(top)
-        top2 = top1 + 1
-
-        bottom1 = int(bottom)
-        bottom2 = bottom1 + 1
-
-        if top != int(top) and left != int(left):
-            # Requires interpolation on both axis
-            top_left = src[top1:bottom1, left1:right1, :]
-            top_right = src[top1:bottom1, left2:right2, :]
-
-            bottom_left = src[top2:bottom2, left1:right1, :]
-            bottom_right = src[top2:bottom2, left2:right2, :]
-
-        elif top != int(top):
-            # Requires interpolation only on Y axis
-            top_left = top_right = src[top1:bottom1, left1:right1, :]
-            bottom_left = bottom_right = src[top2:bottom2, left1:right1, :]
-
-        else:
-            # Requires interpolation only on X axis
-            top_left = bottom_left = src[top1:bottom1, left1:right1, :]
-            top_right = bottom_right = src[top1:bottom1, left2:right2, :]
-
-
-        return bilinear(
-            top_left, top_right, bottom_left, bottom_right,
-            x_distance, y_distance
-        )
+        return translate(src, -left, -top, round(width), round(height))
 
 
 
