@@ -71,6 +71,24 @@ void resize(
 }
 
 
+__device__
+void mix_channels(
+    const unsigned char* arr1,
+    const unsigned char* arr2,
+    int coords1,
+    int coords2,
+    float opacity, // Opacity of the first array!
+    unsigned char *R,
+    unsigned char *G,
+    unsigned char *B
+) {
+    *R = arr1[coords1] * opacity + arr2[coords2] * (1 - opacity);
+    *G = arr1[coords1 + 1] * opacity + arr2[coords2 + 1] * (1 - opacity);
+    *B = arr1[coords1 + 2] * opacity + arr2[coords2 + 2] * (1 - opacity);
+}
+
+
+
 extern "C" __global__
 void overlay_opacity(
     unsigned char* src,
@@ -87,10 +105,11 @@ void overlay_opacity(
     // Destination
     int flattened_coords = (y * width + x) * 3;
 
-    // Get average values with the opacity
-    unsigned char R = overlay[flattened_coords] * opacity + src[flattened_coords] * (1 - opacity);
-    unsigned char G = overlay[flattened_coords + 1] * opacity + src[flattened_coords + 1] * (1 - opacity);
-    unsigned char B = overlay[flattened_coords + 2] * opacity + src[flattened_coords + 2] * (1 - opacity);
+    unsigned char R;
+    unsigned char G;
+    unsigned char B;
+
+    mix_channels(overlay, src, flattened_coords, flattened_coords, opacity, &R, &G, &B);
 
     // Update in source
     src[flattened_coords] = R;
@@ -118,12 +137,16 @@ void blend(
     // Get average values with the opacity
     float opacity = float(overlay[ov_flattened_coords + 3]) / 255.0f;
 
-    unsigned char R = overlay[ov_flattened_coords] * opacity + src[src_flattened_coords] * (1 - opacity);
-    unsigned char G = overlay[ov_flattened_coords + 1] * opacity + src[src_flattened_coords + 1] * (1 - opacity);
-    unsigned char B = overlay[ov_flattened_coords + 2] * opacity + src[src_flattened_coords + 2] * (1 - opacity);
+    unsigned char R;
+    unsigned char G;
+    unsigned char B;
+
+    mix_channels(overlay, src, ov_flattened_coords, src_flattened_coords, opacity, &R, &G, &B);
 
     // Update in source
     src[src_flattened_coords] = R;
     src[src_flattened_coords + 1] = G;
     src[src_flattened_coords + 2] = B;
 }
+
+
