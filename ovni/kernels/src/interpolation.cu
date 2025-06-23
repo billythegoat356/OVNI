@@ -13,7 +13,7 @@ void bilinear_one(
 ) {
 
     // If out of bounds, make it black
-    if (x < 0 || x + 1 > width || y < 0 || y + 1 > height) {
+    if (x < 0 || x > width || y < 0 || y > height) {
         *R = 0;
         *G = 0;
         *B = 0;
