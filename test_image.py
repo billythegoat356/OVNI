@@ -13,8 +13,8 @@ def test_image():
     print(frame.shape)
 
 
-    frame = crop(frame, 0, 1920, 0, 1080)
-    # frame = resize(frame, 1920, 1080)
+    ov = crop(frame.copy(), 20, 200, 300, 500)
+    frame = resize(frame, 1920, 1080)
 
     print(frame.shape)
 
@@ -24,7 +24,9 @@ def test_image():
     def process_frames(frame):
         nonlocal t
         for _ in range(1000):
-            nframe = scale_translate(frame, 1, t, t, 1920, 1080)
+            nframe = frame.copy()
+            overlay(nframe, ov, t, t, 1)
+            # nframe = scale_translate(frame, 1, t, t, 1920, 1080)
             # nframe = scale_translate(frame, 1+(t/1000), 0, 0, 1920, 1080)
             yield nframe
             t += 1

@@ -137,3 +137,42 @@ def crop(src: cp.ndarray, left_x: int, right_x: int, top_y: int, bottom_y: int) 
         cp.ndarray
     """
     return src[top_y:bottom_y, left_x:right_x, :]
+
+
+
+def overlay(src: cp.ndarray, overlay: cp.ndarray, x: int, y: int, alpha: float = 1) -> None:
+    """
+    Overlays an array on the source one, at the given position, with optional custom alpha channel
+    Modifies it inplace
+
+    Parameters:
+        src: cp.ndarray
+        overlay: cp.ndarray
+        x: int
+        y: int
+        alpha: float = 1
+    """
+    if alpha == 1:
+        # Overlay is fully opaque, we can simply replace the pixels
+
+        # Calculate coords box
+        top_y = y
+        bottom_y = top_y+overlay.shape[0]
+        left_x = x
+        right_x = left_x+overlay.shape[1]
+
+        # Make sure coords aren't bigger than the source
+        bottom_y = min(src.shape[0], bottom_y)
+        right_x = min(src.shape[1], right_x)
+
+        # Clip overlay to fit in the coords
+        overlay_w = right_x - left_x
+        overlay_h = bottom_y - top_y
+
+        cropped_overlay = crop(overlay, 0, overlay_w, 0, overlay_h)
+
+        src[top_y:bottom_y, left_x:right_x, :] = cropped_overlay
+    else:
+        # We have to use a custom kernel
+        ...
+
