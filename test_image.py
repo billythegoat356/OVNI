@@ -29,7 +29,7 @@ def test_image():
     def process_frames(frame):
         nonlocal t
         for _ in range(1000):
-            nframe = scale_translate(frame, 1.2, -1*t, -1*t, 1920, 1080)
+            nframe = scale_translate(frame, 1.2, -1*t, -1*t)
             # nframe = scale_translate(frame, 1+(t/1000), 0, 0, 1920, 1080)
             yield nframe
             t += 1

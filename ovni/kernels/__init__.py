@@ -135,7 +135,7 @@ def pipe_rgb_to_nv12(frames: Iterable[cp.ndarray], width: int, height: int) -> G
 
 
 
-def scale_translate(src: cp.ndarray, scale: float, tx: int, ty: int, dst_width: int, dst_height: int) -> cp.ndarray:
+def scale_translate(src: cp.ndarray, scale: float, tx: int, ty: int, dst_width: int | None = None, dst_height: int | None = None) -> cp.ndarray:
     """
     Applies scale and translation to an image.
 
@@ -144,12 +144,22 @@ def scale_translate(src: cp.ndarray, scale: float, tx: int, ty: int, dst_width: 
         scale: float
         tx: int
         ty: int
-        dst_width: int
-        dst_height: int
+        dst_width: int | None = None - if None, uses the same as input
+        dst_height: int | None = None - ...
 
     Returns:
         dst: cp.ndarray (dst_height x dst_width x 3), dtype=uint8
     """
+
+    src_width = src.shape[1]
+    src_height = src.shape[0]
+
+    if dst_width is None:
+        dst_width = src_width
+
+    if dst_height is None:
+        dst_height = src_height
+
     # Create output array
     dst = cp.empty((dst_height, dst_width, 3), dtype=cp.uint8)
 
@@ -163,8 +173,8 @@ def scale_translate(src: cp.ndarray, scale: float, tx: int, ty: int, dst_width: 
         blocks, threads,
         (
             src.ravel(),
-            cp.int32(src.shape[1]),  # srcWidth
-            cp.int32(src.shape[0]),  # srcHeight
+            cp.int32(src_width),
+            cp.int32(src_height),
             dst.ravel(),
             cp.int32(dst_width),
             cp.int32(dst_height),
