@@ -7,7 +7,7 @@ from .interpolation import bilinear
 
 
 
-def scale_translate(src: cp.ndarray, scale: float, tx: int, ty: int, dst_width: int | None = None, dst_height: int | None = None) -> cp.ndarray:
+def scale_translate(src: cp.ndarray, scale: float, tx: float, ty: float, dst_width: int | None = None, dst_height: int | None = None) -> cp.ndarray:
     """
     Applies scale and translation to an image.
     Uses bilinear interpolation
@@ -15,8 +15,8 @@ def scale_translate(src: cp.ndarray, scale: float, tx: int, ty: int, dst_width: 
     Parameters:
         src: cp.ndarray (H x W x 3), dtype=uint8
         scale: float
-        tx: int
-        ty: int
+        tx: float
+        ty: float
         dst_width: int | None = None - if None, uses the same as input
         dst_height: int | None = None - ...
 
@@ -49,8 +49,8 @@ def scale_translate(src: cp.ndarray, scale: float, tx: int, ty: int, dst_width: 
             cp.int32(dst_width),
             cp.int32(dst_height),
             cp.float32(scale),
-            cp.int32(tx),
-            cp.int32(ty)
+            cp.float32(tx),
+            cp.float32(ty)
         )
     )
     return dst
@@ -77,6 +77,32 @@ def scale(src: cp.ndarray, scale: float, dst_width: int | None = None, dst_heigh
         scale=scale,
         tx=0,
         ty=0,
+        dst_width=dst_width,
+        dst_height=dst_height
+    )
+
+def translate(src: cp.ndarray, tx: float, ty: float, dst_width: int | None = None, dst_height: int | None = None) -> cp.ndarray:
+    """
+    Applies translation to an image.
+    Uses bilinear interpolation
+    (essentially calls `scale_translate` with no scale)
+
+    Parameters:
+        src: cp.ndarray (H x W x 3), dtype=uint8
+        tx: float
+        ty: float
+        dst_width: int | None = None - if None, uses the same as input
+        dst_height: int | None = None - ...
+
+    Returns:
+        dst: cp.ndarray (dst_height x dst_width x 3), dtype=uint8
+    """
+
+    return scale_translate(
+        src=src,
+        scale=1,
+        tx=tx,
+        ty=ty,
         dst_width=dst_width,
         dst_height=dst_height
     )

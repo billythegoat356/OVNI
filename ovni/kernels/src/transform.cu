@@ -8,8 +8,8 @@ void scale_translate(
     int dstw,
     int dsth,
     float scale,
-    int tx,
-    int ty
+    float tx,
+    float ty
 ) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;

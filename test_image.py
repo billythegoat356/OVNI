@@ -13,7 +13,7 @@ def test_image():
     print(frame.shape)
 
 
-    frame = crop(frame, 0, 10, 10, 20)
+    frame = crop(frame, 100.5, 120.5, 10, 20)
 
 
 
@@ -24,7 +24,7 @@ def test_image():
 
     def process_frames(frame):
         nonlocal t
-        for _ in range(1000):
+        for _ in range(100):
             yield resize(frame, 1920, 1080)
             t += 1
 
