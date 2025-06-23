@@ -172,69 +172,120 @@ def crop(src: cp.ndarray, left: int | float, right: int | float, top: int | floa
     assert abs(round(width)-width) < 10e-5 and abs(round(height)-height) < 10e-5, "If floats are passed, make sure that they form an integer box"
 
     if left == int(left) and top == int(top):
-        # Normal crop
+        # Normal crop if integers are passed
         return src[top:bottom, left:right, :]
     
     else:
+        # Otherwise use translation
         return translate(src, -left, -top, round(width), round(height))
 
 
 
-def overlay(src: cp.ndarray, overlay: cp.ndarray, x: int, y: int, alpha: float = 1) -> None:
+def overlay(src: cp.ndarray, overlay_arr: cp.ndarray, x: int | float, y: int | float, alpha: float = 1) -> None:
     """
     Overlays an array on the source one, at the given position, with optional custom alpha channel
+    Non integer position is allowed, in this case the image will be interpolated.
     Modifies it inplace
 
     Parameters:
         src: cp.ndarray
-        overlay: cp.ndarray
-        x: int
-        y: int
+        overlay_arr: cp.ndarray
+        x: int | float
+        y: int | float
         alpha: float = 1
     """
 
-    # Calculate coords box
-    top_y = y
-    bottom_y = top_y+overlay.shape[0]
-    left_x = x
-    right_x = left_x+overlay.shape[1]
+    width = src.shape[1]
+    height = src.shape[0]
+
+    # Calculate coords box - from where to where the overlay should be put
+    top_y = int(y)
+    bottom_y = top_y+overlay_arr.shape[0]
+    left_x = int(x)
+    right_x = left_x+overlay_arr.shape[1]
 
     # Make sure coords aren't bigger than the source
-    bottom_y = min(src.shape[0], bottom_y)
-    right_x = min(src.shape[1], right_x)
+    right_x = min(width, right_x)
+    bottom_y = min(height, bottom_y)
 
     # Clip overlay to fit in the coords
     overlay_w = right_x - left_x
     overlay_h = bottom_y - top_y
+    clipped_overlay = crop(overlay_arr, 0, overlay_w, 0, overlay_h)
 
-    clipped_overlay = crop(overlay, 0, overlay_w, 0, overlay_h)
-    
-    if alpha == 1:
-        # Overlay is fully opaque, we can simply replace the pixels
-        src[top_y:bottom_y, left_x:right_x, :] = clipped_overlay
-    else:
-        # We have to use a custom kernel
-        blocks = make_blocks(overlay_w, overlay_h)
+    if x != int(x) or y != int(y):
+        # Floats passed, requires interpolation
+        x_distance = x - int(x)
+        y_distance = y - int(y)
 
-        # Ravel the source and overlay where it needs overlaying
-        region = src[top_y:bottom_y, left_x:right_x, :]
-        ksrc = region.ravel()
-        koverlay = clipped_overlay.ravel()
+        # Clip the source for the area containing the 4 positions of the overlay
+        clipped_src = crop(src, left_x, min(width, right_x+1), top_y, min(height, bottom_y+1))
 
-        Kernels.overlay_opacity(
-            blocks, THREADS,
-            (
-                ksrc,
-                koverlay,
-                cp.int32(overlay_w),
-                cp.int32(overlay_h),
-                cp.float32(alpha)
-            )
+        if x != int(x) and y != int(y):
+            # Requires interpolation on both axis
+            top_left = clipped_src.copy()
+            top_right = clipped_src.copy()
+
+            bottom_left = clipped_src.copy()
+            bottom_right = clipped_src.copy()
+
+            overlay(top_left, clipped_overlay, 0, 0)
+            overlay(top_right, clipped_overlay, 1, 0)
+
+            overlay(bottom_left, clipped_overlay, 0, 1)
+            overlay(bottom_right, clipped_overlay, 1, 1)
+
+        elif y != int(y):
+            # Requires interpolation only on Y axis
+            top_left = top_right = clipped_src.copy()
+            bottom_left = bottom_right = clipped_src.copy()
+
+            overlay(top_left, clipped_overlay, 0, 0)
+            overlay(bottom_left, clipped_overlay, 0, 1)
+
+        else:
+            # Requires interpolation only on X axis
+            top_left = bottom_left = clipped_src.copy()
+            top_right = bottom_right = clipped_src.copy()
+
+            overlay(top_left, overlay_arr, 0, 0)
+            overlay(top_right, overlay_arr, 1, 0)
+
+
+        arr = bilinear(
+            top_left, top_right, bottom_left, bottom_right,
+            x_distance, y_distance
         )
+        overlay(src, arr, left_x, top_y, alpha=alpha) # Only apply alpha once
 
-        if not region.flags['C_CONTIGUOUS']:
-            # Only assign back if ravel created a copy (non-contiguous slice)
-            src[top_y:bottom_y, left_x:right_x, :] = ksrc.reshape((overlay_h, overlay_w, -1))
+    else:
+        
+        if alpha == 1:
+            # Overlay is fully opaque, we can simply replace the pixels
+            src[top_y:bottom_y, left_x:right_x, :] = clipped_overlay
+        else:
+            # We have to use a custom kernel
+            blocks = make_blocks(overlay_w, overlay_h)
+
+            # Ravel the source and overlay where it needs overlaying
+            region = src[top_y:bottom_y, left_x:right_x, :]
+            ksrc = region.ravel()
+            koverlay = clipped_overlay.ravel()
+
+            Kernels.overlay_opacity(
+                blocks, THREADS,
+                (
+                    ksrc,
+                    koverlay,
+                    cp.int32(overlay_w),
+                    cp.int32(overlay_h),
+                    cp.float32(alpha)
+                )
+            )
+
+            if not region.flags['C_CONTIGUOUS']:
+                # Only assign back if ravel created a copy (non-contiguous slice)
+                src[top_y:bottom_y, left_x:right_x, :] = ksrc.reshape((overlay_h, overlay_w, -1))
 
 
 def blend(src: cp.ndarray, overlay: cp.ndarray, x: int, y: int) -> None:
