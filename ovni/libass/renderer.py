@@ -91,13 +91,14 @@ class Renderer:
             return self.last_rendered_frame.copy() # Return a copy in case user operates on it
         
         # Convert to RGBA cupy array
-        frame = self._convert_to_rgba_array_cuda(img_ptr)
+        frame = self._convert_to_rgba_array(img_ptr)
 
         # Set last rendered frame
         self.last_rendered_frame = frame
         return frame.copy() # Return a copy in case user operates on it
     
-    def _convert_to_rgba_array_cuda(self, img_ptr) -> cp.ndarray:
+    
+    def _convert_to_rgba_array(self, img_ptr) -> cp.ndarray:
         """
         Convert libass image linked list to RGBA cupy array
         ---------
@@ -119,79 +120,6 @@ class Renderer:
 
             # Blend image on output
             blend_ass_image(output, img)
-
-            # Define img_ptr to the next linked one
-            img_ptr = img.next
-
-        return output
-
-
-    def _convert_to_rgba_array(self, img_ptr) -> cp.ndarray:
-        """
-        Convert libass image linked list to RGBA cupy array
-        ---------
-        Access struct content from pointer
-        Calculate color as RGB from .color
-        Create array with width and height with default color
-        Iterate over bitmap:
-            - calculate alpha
-            - add it on the array
-        Blend it on output at given coords using formula: a1 + a2 * (1 - a1)
-        Keep going until we don't have a pointer (nothing to render)
-
-        Parameters:
-            img_ptr - pointer to ASS_Image
-
-        Returns:
-            cp.ndarray
-        """
-        # Create output cupy RGBA array
-        output = cp.zeros((self.height, self.width, 4), dtype=cp.uint8)
-
-        # Walk through linked list of images
-        while img_ptr:
-            # Access content of pointer (ASS_Image)
-            img = img_ptr.contents
-
-            # Image color is RGBA
-            color = img.color
-
-            R = color >> 24 # Shift by 3 bytes
-            G = (color >> 16) & 0xff # Shift by 2 bytes, keep first byte
-            B = (color >> 8) & 0xff # Shift by 1 byte, keep first byte
-            A = (255 - (color & 0xff)) # Keep first byte, and libass inverts alpha
-
-            # Create buffer with correct type and load bitmap
-            buf_type = ctypes.c_ubyte * (img.h * img.stride)
-            buf = buf_type.from_address(ctypes.addressof(img.bitmap.contents))
-
-            # Load into cupy array
-            bitmap = cp.frombuffer(buf, dtype=cp.uint8).reshape((img.h, img.stride))
-            bitmap = bitmap[:, :img.w] # Now remove stride
-
-            # Extract coordinates of pixels that aren't zero (they have alpha and can be displaid)
-            ys, xs = cp.nonzero(bitmap)
-            
-            # Calculate overlay alpha normalized to 0-1
-            ov_alpha = (bitmap[ys, xs].astype(cp.float32) * A) / (255 * 255)
-
-            # Calculate original alpha normalized to 0-1
-            og_alpha = output[ys + img.dst_y, xs + img.dst_x, 3].astype(cp.float32) / 255
-
-            # Calculate resulting alpha
-            alpha_r = ov_alpha + og_alpha * (1 - ov_alpha) + 10e-9 # Add epsilon to avoid division by zero, since cupy will apply it anyways
-
-            # Precompute coefficients for color channels (to scale back to full opacity)
-            coef_overlay = ov_alpha / alpha_r
-            coef_orig = og_alpha * (1 - ov_alpha) / alpha_r
-
-            # Update color channels
-            output[ys + img.dst_y, xs + img.dst_x, 0] = R * coef_overlay + output[ys + img.dst_y, xs + img.dst_x, 0] * coef_orig
-            output[ys + img.dst_y, xs + img.dst_x, 1] = G * coef_overlay + output[ys + img.dst_y, xs + img.dst_x, 1] * coef_orig
-            output[ys + img.dst_y, xs + img.dst_x, 2] = B * coef_overlay + output[ys + img.dst_y, xs + img.dst_x, 2] * coef_orig
-
-            # Update alpha channel
-            output[ys + img.dst_y, xs + img.dst_x, 3] = alpha_r * 255 # Multiply back to 0-255
 
             # Define img_ptr to the next linked one
             img_ptr = img.next
