@@ -49,7 +49,8 @@ def test_image():
 
     mux(
         h264_stream=h264_stream,
-        output_path="videos/out.mp4"
+        output_path="videos/out.mp4",
+        audio_path='videos/audio.mp3'
     )
 
 

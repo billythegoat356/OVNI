@@ -230,13 +230,17 @@ def encode(frames: Iterable[cp.ndarray], width: int, height: int, fps: int) -> G
 
 
 
-def mux(h264_stream: Iterable[bytes], output_path: str, ffmpeg_flags: list[str] = []) -> None:
+def mux(h264_stream: Iterable[bytes], output_path: str, audio_path: str | None = None, ffmpeg_flags: list[str] = []) -> None:
     """
     Takes an iterable of a H264 bytestream, and muxes it with a FFmpeg pipe in the output path
-
+    
+    It is possible to give an audio path which will be muxed with the video stream.
+    Note that the two streams are just muxed. The video will be of the length of the longest one. Process the audio separately to avoid this.
+    
     Parameters:
         h264_stream: Iterable[bytes]
         output_path: str
+        audio_path: str | None = None - optional audio path.
         ffmpeg_flags: list[str] = [] - additional ffmpeg flags
         
     Returns:
@@ -247,12 +251,22 @@ def mux(h264_stream: Iterable[bytes], output_path: str, ffmpeg_flags: list[str] 
     ffmpeg_cmd = [
         'ffmpeg',
         '-f', CODEC,            # Input format
-        '-i', 'pipe:0',         # Read from stdin
-        '-c:v', 'copy',         # Copy without re-encoding
-        '-y',                   # Overwrite output
-        *ffmpeg_flags,
-        output_path
+        '-i', 'pipe:0'          # Read from stdin
     ]
+
+    # Add optional audio path
+    if audio_path is not None:
+        ffmpeg_cmd.extend([
+            '-i', audio_path,
+        ])
+    
+    # Add rest of the command
+    ffmpeg_cmd.extend([
+        '-c', 'copy',          # Copy without re-encoding
+        *ffmpeg_flags,
+        '-y',                   # Overwrite output
+        output_path
+    ])
 
     ffmpeg_process = subprocess.Popen(
         ffmpeg_cmd,
