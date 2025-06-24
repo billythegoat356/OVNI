@@ -22,7 +22,7 @@ If you create one, feel free to make a pull request. (I won't accept it if the c
 # Todo
 
 - Add `make_transparent` kernel that creates RGBA frame from image with specific color turned into transparency (e.g., green screen)
-- ⏳ Add support for captions with libASS
+- ✅ Add support for captions with libASS
 - Add kernel `blend_transparent` to blend two RGBA frames (required by libASS)
 - Add support for audio stream in FFmpeg muxing
 
