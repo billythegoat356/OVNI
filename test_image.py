@@ -1,6 +1,8 @@
 from ovni.base import demux_and_decode, encode, mux, load_image
 from ovni.ops import *
 
+from ovni.libass import LibASS, Renderer
+
 
 def test_image():
 
@@ -23,37 +25,22 @@ def test_image():
 
     def process_frames(frame):
         nonlocal t
-        height, width, _ = frame.shape
-
-        # Create an alpha gradient from 0 to 255 over the width
-        alpha_channel = cp.linspace(0, 255, width, dtype=cp.uint8)
-        alpha_channel = cp.tile(alpha_channel, (height, 1))  # Shape: (height, width)
-
-        # Expand dims to (height, width, 1)
-        alpha_channel = cp.expand_dims(alpha_channel, axis=2)
-
-        # Combine RGB + alpha: assuming RGB channels are zeros for kframe
-        kframe = cp.concatenate((frame, alpha_channel), axis=2)  # Shape: (height, width, 4)
-
+        LibASS.load()
+        bm = Renderer("videos/captions.ass", 1920, 1080)
         for _ in range(1000):
+            c_frame = bm.get_frame_at(int(t/25*1000))
             nframe = frame.copy()
-
-            x = 50 + (t / 3000 * 1920)
-            y = 50 + (t / 3000 * 1080)
-
-            # x = int(x)
-            # y = int(y)
-
-            blend(nframe, kframe, x, y)
+            if c_frame is not None:
+                blend(nframe, c_frame, 0, 0)
             yield nframe
             t += 1
+
 
 
 
     frames = process_frames(frame)
 
     frames = pipe_rgb_to_nv12(frames)
-
     h264_stream = encode(
         frames=frames,
         width=1920,

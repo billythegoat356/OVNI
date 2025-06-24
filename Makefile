@@ -1,4 +1,4 @@
-CUDA_ARCH = compute_75
+CUDA_ARCH = compute_89 # Write down your version from https://developer.nvidia.com/cuda-gpus
 
 SRC = ovni/kernels/src/all_kernels.cu
 OUT = ovni/kernels/compiled/all_kernels.ptx
