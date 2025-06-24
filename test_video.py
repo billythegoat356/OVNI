@@ -12,7 +12,6 @@ def test_video():
         input_path="videos/video2.mp4",
         frame_count=None
     )
-
     t = 0
 
     def process_frames(frames):

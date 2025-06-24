@@ -1,7 +1,7 @@
 from ovni.base import demux_and_decode, encode, mux, load_image
 from ovni.ops import *
 
-from ovni.libass import ASSRenderer, LibASS
+from ovni.ass import ASSRenderer, LibASS
 
 
 def test_image():
