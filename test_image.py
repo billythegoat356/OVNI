@@ -27,11 +27,13 @@ def test_image():
         nonlocal t
         LibASS.load()
         bm = Renderer("videos/captions.ass", 1920, 1080)
-        for _ in range(1000):
-            c_frame = bm.render_frame(int(t/25*1000))
+        for _ in range(2000):
             nframe = frame.copy()
+
+            c_frame = bm.render_frame(int(t/25*1000))
             if c_frame is not None:
                 blend(nframe, c_frame, 0, 0)
+                
             yield nframe
             t += 1
 

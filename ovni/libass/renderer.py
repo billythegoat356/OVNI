@@ -57,7 +57,7 @@ class Renderer:
         LibASS.obj.ass_set_fonts(
             self.renderer,
             None,  # default font
-            None,  # default family
+            b"Arial",  # default family
             1,     # fontprovider (1 = fontconfig) 
             None,  # fontconfig config
             0      # update fontconfig
@@ -137,35 +137,32 @@ class Renderer:
             buf = buf_type.from_address(ctypes.addressof(img.bitmap.contents))
 
             # Load into numpy array
-            np_bitmap = np.frombuffer(buf, dtype=np.uint8).reshape((img.h, img.stride))
-            bitmap = np_bitmap[:, :img.w] # Remove stride
-            
-            # Where to update
-            mask = bitmap > 0
+            np_bitmap = np.frombuffer(buf, dtype=np.uint8).reshape((img.h, img.stride)) # Make sure the stride is respected at the last row
+            bitmap = np_bitmap[:, :img.w] # Now remove stride
 
-            # Extract coordinates of pixels to update
-            ys, xs = np.nonzero(mask)
+            # Extract coordinates of pixels that aren't zero (they have alpha and can be displaid)
+            ys, xs = np.nonzero(bitmap)
             
-            # Calculate overlay alpha normalized to [0,1]
+            # Calculate overlay alpha normalized to 0-1
             ov_alpha = (bitmap[ys, xs].astype(np.float32) * A) / (255 * 255)
 
-            # Compute original alpha normalized to [0,1]
+            # Compute original alpha normalized to 0-1
             og_alpha = output[ys + img.dst_y, xs + img.dst_x, 3].astype(np.float32) / 255
 
             # Compute resulting alpha
-            alpha_r = ov_alpha + og_alpha * (1 - ov_alpha)
+            alpha_r = ov_alpha + og_alpha * (1 - ov_alpha) + 10e-9 # Add epsilon to avoid division by zero
 
-            # Precompute coefficients for color channels
+            # Precompute coefficients for color channels (to scale back to full opacity)
             coef_overlay = ov_alpha / alpha_r
             coef_orig = og_alpha * (1 - ov_alpha) / alpha_r
 
-            # Update color channels all at once using broadcasting
+            # Update color channels
             output[ys + img.dst_y, xs + img.dst_x, 0] = R * coef_overlay + output[ys + img.dst_y, xs + img.dst_x, 0] * coef_orig
             output[ys + img.dst_y, xs + img.dst_x, 1] = G * coef_overlay + output[ys + img.dst_y, xs + img.dst_x, 1] * coef_orig
             output[ys + img.dst_y, xs + img.dst_x, 2] = B * coef_overlay + output[ys + img.dst_y, xs + img.dst_x, 2] * coef_orig
 
             # Update alpha channel
-            output[ys + img.dst_y, xs + img.dst_x, 3] = alpha_r * 255
+            output[ys + img.dst_y, xs + img.dst_x, 3] = alpha_r * 255 # Multiply back to 0-255
 
             # Define img_ptr to the next linked one
             img_ptr = img.next
