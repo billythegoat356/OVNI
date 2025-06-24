@@ -86,6 +86,10 @@ class LibASS:
         # Initialization of renderer
         cls.obj.ass_renderer_init.argtypes = [ctypes.c_void_p] # Pointer to ASS_Library
         cls.obj.ass_renderer_init.restype = ctypes.c_void_p # Pointer to ASS_Renderer
+
+        # Finalization of renderer
+        cls.obj.ass_renderer_done.argtypes = [ctypes.c_void_p] # Pointer to ASS_Renderer
+        cls.obj.ass_renderer_done.restype = None # Void
         
         # Set the frame size for rendering
         cls.obj.ass_set_frame_size.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int] # Pointer to ASS_Renderer, width, height
@@ -109,6 +113,10 @@ class LibASS:
         # Read the ASS file
         cls.obj.ass_read_file.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_char_p] # Pointer to ASS_Library, filename, encoding
         cls.obj.ass_read_file.restype = ctypes.c_void_p # Pointer to ASS_Track
+
+        # Free the track
+        cls.obj.ass_free_track.argtypes = [ctypes.c_void_p] # Pointer to ASS_Track
+        cls.obj.ass_free_track.restype = None # Void
         
         # Render a frame
         cls.obj.ass_render_frame.argtypes = [

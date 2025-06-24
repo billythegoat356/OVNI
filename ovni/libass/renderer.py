@@ -1,6 +1,6 @@
 import ctypes
+import atexit
 
-import numpy as np
 import cupy as cp
 
 from .lib import LibASS, ASS_Image
@@ -62,6 +62,38 @@ class Renderer:
             None,  # fontconfig config
             0      # update fontconfig
         )
+
+        # Schedule unload
+        atexit.register(self.unload_renderer)
+
+    def unload_renderer(self) -> None:
+        """
+        Unloads the renderer and associated resources.
+        Usually called automatically on object deletion, and scheduled on script exit, but you can call it manually.
+
+        Returns:
+            None
+        """
+    
+        # Unload renderer
+        if self.renderer is not None:
+            LibASS.obj.ass_renderer_done(self.renderer)
+            self.renderer = None
+
+        # Free track
+        if self.track is not None:
+            LibASS.obj.ass_free_track(self.track)
+            self.track = None
+
+    
+    def __del__(self) -> None:
+        """
+        Unloads on object deletion.
+
+        Returns:
+            None
+        """
+        self.unload_renderer()
 
 
     def render_frame(self, timestamp_ms: int, background_frame: cp.ndarray | None = None) -> cp.ndarray | None:
