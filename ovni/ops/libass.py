@@ -25,6 +25,10 @@ def blend_ass_image(dst: cp.ndarray, img: 'ASS_Image') -> None:
     """
     blocks = make_blocks(img.w, img.h)
 
+    # Define width and height of dst array (needed for coordinates calculation)
+    dst_h = dst.shape[0]
+    dst_w = dst.shape[1]
+
     # Create buffer with correct type and load bitmap
     buf_type = ctypes.c_ubyte * (img.h * img.stride)
     buf = buf_type.from_address(ctypes.addressof(img.bitmap.contents))
@@ -40,6 +44,7 @@ def blend_ass_image(dst: cp.ndarray, img: 'ASS_Image') -> None:
             bitmap,
             cp.uint32(img.color),
             cp.int32(img.dst_x), cp.int32(img.dst_y),
+            cp.int32(dst_w), cp.int32(dst_h),
             dst.ravel()
         )
     )
