@@ -2,7 +2,7 @@
 I was getting frustrated at FFmpeg being so slow/buggy on specific tasks, and I won't even talk about MoviePy (some people still use it apparently...)   
 So I decided to make my custom video processing pipeline taking full advantage of my GPU.   
 
-Demuxing/decoding happens on the GPU thanks to NVC (PyNvVideoCodec), frames are kept in GPU memory as CuPy arrays, and can then be encoded and muxed while still on the GPU with NVC and a FFmpeg pipe.   
+Demuxing/decoding happens on the GPU thanks to NVC (PyNvVideoCodec), frames are kept in GPU memory as CuPy arrays, and frame operations are done on the GPU via CUDA kernels. The frames can then be encoded and muxed while still on the GPU with NVC and a FFmpeg pipe.   
 The whole process is written in Python and follows a pipeline (generator) allowing to keep it simple and suitable for real-time tasks aswell as avoiding filling up the memory.   
 
 I coded this in a few hours so there is definitely room for improvement, speed wise and code wise.   
