@@ -10,9 +10,9 @@ __device__ inline float clampf(
 extern "C" __global__
 void chroma_key(
     unsigned char* src,
-    unsigned char R,
-    unsigned char G,
-    unsigned char B,
+    unsigned char kR,
+    unsigned char kG,
+    unsigned char kB,
     int transparencyT,
     int opacityT,
     int width,
@@ -32,7 +32,7 @@ void chroma_key(
     unsigned char sB = src[index + 2];
 
     // Compute difference with L2 norm
-    float metric = sqrtf(powf(R-sR, 2) + powf(G-sG, 2) + powf(B-sB, 2));
+    float metric = sqrtf(powf(kR-sR, 2) + powf(kG-sG, 2) + powf(kB-sB, 2));
 
     // Calculate alpha
     float alpha = (metric - transparencyT) / (float)(opacityT - transparencyT);

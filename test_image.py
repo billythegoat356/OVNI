@@ -29,7 +29,7 @@ def test_image():
 
     def process_frames(frame):
         nonlocal t
-        LibASS.load()
+        # LibASS.load()
         
         # print("Storing overlay fully in memory once")
         # overlay = demux_and_decode("videos/ov1.mp4")
@@ -52,7 +52,7 @@ def test_image():
                     oframe = chroma_key(oframe, (0, 0, 0), 150, 255)
                     blend(nframe, oframe, 0, 0)
 
-                    # r.render_frame(int(t/25*1000), background_frame=nframe)
+                    r.render_frame(int(t/25*1000), background_frame=nframe)
                     yield nframe
                     t += 1
 
@@ -60,7 +60,7 @@ def test_image():
 
 
     frames = process_frames(frame)
-    frames = [next(frames)]
+    # frames = [next(frames)]
 
     frames = pipe_rgb_to_nv12(frames)
     h264_stream = encode(

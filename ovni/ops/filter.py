@@ -4,14 +4,14 @@ from ..kernels import Kernels, THREADS, make_blocks
 
 
 
-def chroma_key(src: cp.ndarray, color: tuple[int, int, int], transparency_t: int = 150, opacity_t: int = 255) -> cp.ndarray:
+def chroma_key(src: cp.ndarray, key_color: tuple[int, int, int], transparency_t: int = 150, opacity_t: int = 255) -> cp.ndarray:
     """
-    Applies chroma keying on a given array for a given color.
+    Applies chroma keying on a given array for a given key color.
     This is essentially the process of turning a 'green screen' into a transparent overlay.
     -------
     NOTE for transparency/opacity threshold handling
     These thresholds are compared to a distance computed from the 3 channels
-    
+
     If you see too many pixels close to the key color -> increase transparency threshold
     If you see too many pixels transparent that shouldn't be -> decrease opacity threshold
 
@@ -21,7 +21,7 @@ def chroma_key(src: cp.ndarray, color: tuple[int, int, int], transparency_t: int
 
     Parameters:
         src: cp.ndarray
-        color: tuple[int, int, int] - the color that should be used as a chroma key, in RGB format
+        key_color: tuple[int, int, int] - the color that should be used as a chroma key, in RGB format
         transparency_t: int = 150 - the threshold at and below which pixels are considered fully transparent
         opacity_t: int = 255 - the threshold at and after which pixels are considered fully opaque
 
@@ -42,9 +42,9 @@ def chroma_key(src: cp.ndarray, color: tuple[int, int, int], transparency_t: int
         blocks, THREADS,
         (
             rgba_array.ravel(),
-            cp.uint8(color[0]),
-            cp.uint8(color[1]),
-            cp.uint8(color[2]),
+            cp.uint8(key_color[0]),
+            cp.uint8(key_color[1]),
+            cp.uint8(key_color[2]),
             cp.int32(transparency_t),
             cp.int32(opacity_t),
             cp.int32(width),
