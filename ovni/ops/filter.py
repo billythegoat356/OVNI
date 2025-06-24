@@ -4,16 +4,26 @@ from ..kernels import Kernels, THREADS, make_blocks
 
 
 
-def chroma_key(src: cp.ndarray, color: tuple[int, int, int], min_threshold: int = 0, max_threshold: int = 255) -> cp.ndarray:
+def chroma_key(src: cp.ndarray, color: tuple[int, int, int], transparency_t: int = 150, opacity_t: int = 255) -> cp.ndarray:
     """
     Applies chroma keying on a given array for a given color.
     This is essentially the process of turning a 'green screen' into a transparent overlay.
+    -------
+    NOTE for transparency/opacity threshold handling
+    These thresholds are compared to a distance computed from the 3 channels
+    
+    If you see too many pixels close to the key color -> increase transparency threshold
+    If you see too many pixels transparent that shouldn't be -> decrease opacity threshold
+
+    If you see a sharp change from transparency to normal colors -> decrease transparency threshold
+    If you see a sharp change from transparency to the key color -> increase opacity threshold
+
 
     Parameters:
         src: cp.ndarray
         color: tuple[int, int, int] - the color that should be used as a chroma key, in RGB format
-        min_threshold: int = 0 - the threshold below (and at) which pixels will be considered fully transparent
-        max_threshold: int = 255 - the threshold above (and at) which pixels will be considered fully opaque
+        transparency_t: int = 150 - the threshold at and below which pixels are considered fully transparent
+        opacity_t: int = 255 - the threshold at and after which pixels are considered fully opaque
 
     Returns:
         cp.ndarray - a 4 channels RGBA frame with transparency
@@ -35,8 +45,8 @@ def chroma_key(src: cp.ndarray, color: tuple[int, int, int], min_threshold: int 
             cp.uint8(color[0]),
             cp.uint8(color[1]),
             cp.uint8(color[2]),
-            cp.int32(min_threshold),
-            cp.int32(max_threshold),
+            cp.int32(transparency_t),
+            cp.int32(opacity_t),
             cp.int32(width),
             cp.int32(height)
         )

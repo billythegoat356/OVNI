@@ -13,8 +13,8 @@ void chroma_key(
     unsigned char R,
     unsigned char G,
     unsigned char B,
-    int minT,
-    int maxT,
+    int transparencyT,
+    int opacityT,
     int width,
     int height
 ) {
@@ -35,7 +35,7 @@ void chroma_key(
     float metric = sqrtf(powf(R-sR, 2) + powf(G-sG, 2) + powf(B-sB, 2));
 
     // Calculate alpha
-    float alpha = (metric - minT) / (float)(maxT - minT);
+    float alpha = (metric - transparencyT) / (float)(opacityT - transparencyT);
     unsigned char n_alpha = (unsigned char)(clampf(alpha * 255, 0.0f, 255.0f));
 
     src[index + 3] = n_alpha;

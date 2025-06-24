@@ -40,7 +40,7 @@ def test_image():
 
         with ASSRenderer("videos/captions2.ass", 1920, 1080) as r:
             
-            for _ in range(10):
+            for _ in range(5):
 
                 print("Reloading overlay each time")
                 overlay = demux_and_decode("videos/ov1.mp4")
@@ -49,7 +49,7 @@ def test_image():
                 for oframe in overlay:
                     nframe = frame.copy()
 
-                    oframe = chroma_key(oframe, (0, 0, 0), 0, 500)
+                    oframe = chroma_key(oframe, (0, 0, 0), 150, 255)
                     blend(nframe, oframe, 0, 0)
 
                     # r.render_frame(int(t/25*1000), background_frame=nframe)
@@ -60,6 +60,7 @@ def test_image():
 
 
     frames = process_frames(frame)
+    frames = [next(frames)]
 
     frames = pipe_rgb_to_nv12(frames)
     h264_stream = encode(
