@@ -86,7 +86,7 @@ class Renderer:
         if not img_ptr:
             return cp.zeros((self.height, self.width, 4), dtype=cp.uint8)
 
-        # We only do not re-process if nothing changed (positions change aren't handled)
+        # We only do not re-process if nothing changed (positions change aren't handled, I assume these are a very rare use-case)
         if self.detect_change.value == 0 and self.last_rendered_frame is not None:
             return self.last_rendered_frame.copy() # Return a copy in case user operates on it
         
@@ -117,7 +117,7 @@ class Renderer:
             cp.ndarray
         """
         # Create output cupy RGBA array
-        output = np.zeros((self.height, self.width, 4), dtype=np.uint8)
+        output = cp.zeros((self.height, self.width, 4), dtype=cp.uint8)
 
         # Walk through linked list of images
         while img_ptr:
@@ -137,17 +137,20 @@ class Renderer:
             buf = buf_type.from_address(ctypes.addressof(img.bitmap.contents))
 
             # Load into numpy array
-            np_bitmap = np.frombuffer(buf, dtype=np.uint8).reshape((img.h, img.stride)) # Make sure the stride is respected at the last row
+            np_bitmap = cp.frombuffer(buf, dtype=cp.uint8).reshape((img.h, img.stride)) # Make sure the stride is respected at the last row
             bitmap = np_bitmap[:, :img.w] # Now remove stride
 
+            # Convert to cupy
+            bitmap = cp.asarray(bitmap)
+
             # Extract coordinates of pixels that aren't zero (they have alpha and can be displaid)
-            ys, xs = np.nonzero(bitmap)
+            ys, xs = cp.nonzero(bitmap)
             
             # Calculate overlay alpha normalized to 0-1
-            ov_alpha = (bitmap[ys, xs].astype(np.float32) * A) / (255 * 255)
+            ov_alpha = (bitmap[ys, xs].astype(cp.float32) * A) / (255 * 255)
 
             # Compute original alpha normalized to 0-1
-            og_alpha = output[ys + img.dst_y, xs + img.dst_x, 3].astype(np.float32) / 255
+            og_alpha = output[ys + img.dst_y, xs + img.dst_x, 3].astype(cp.float32) / 255
 
             # Compute resulting alpha
             alpha_r = ov_alpha + og_alpha * (1 - ov_alpha) + 10e-9 # Add epsilon to avoid division by zero
@@ -167,4 +170,4 @@ class Renderer:
             # Define img_ptr to the next linked one
             img_ptr = img.next
 
-        return cp.asarray(output)
+        return output
