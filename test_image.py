@@ -33,11 +33,14 @@ def test_image():
         
         # print("Storing overlay fully in memory once")
         # overlay = demux_and_decode("videos/ov1.mp4")
-        # overlay = list(pipe_nv12_to_rgb(overlay, 1920, 1080))
-        
+        # overlay = pipe_nv12_to_rgb(overlay, 1920, 1080)
+        # overlay = (chroma_key(o, (0, 0, 0), 0, 255) for o in overlay)
+        # overlay = list(overlay)
+
+
         with ASSRenderer("videos/captions2.ass", 1920, 1080) as r:
             
-            for _ in range(2):
+            for _ in range(10):
 
                 print("Reloading overlay each time")
                 overlay = demux_and_decode("videos/ov1.mp4")

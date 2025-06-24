@@ -248,8 +248,8 @@ def overlay(src: cp.ndarray, overlay_arr: cp.ndarray, x: int | float, y: int | f
             top_left = bottom_left = clipped_src.copy()
             top_right = bottom_right = clipped_src.copy()
 
-            overlay(top_left, overlay_arr, 0, 0)
-            overlay(top_right, overlay_arr, 1, 0)
+            overlay(top_left, clipped_overlay, 0, 0)
+            overlay(top_right, clipped_overlay, 1, 0)
 
 
         arr = bilinear(
