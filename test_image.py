@@ -1,7 +1,7 @@
 from ovni.base import demux_and_decode, encode, mux, load_image
 from ovni.ops import *
 
-from ovni.libass import LibASS, Renderer
+from ovni.libass import ASSRenderer, LibASS
 
 
 def test_image():
@@ -26,13 +26,13 @@ def test_image():
     def process_frames(frame):
         nonlocal t
         LibASS.load()
-        bm = Renderer("videos/captions2.ass", 1920, 1080)
-        for _ in range(2000):
-            nframe = frame.copy()
+        with ASSRenderer("videos/captions2.ass", 1920, 1080) as r:
+            for _ in range(2000):
+                nframe = frame.copy()
 
-            bm.render_frame(int(t/25*1000), background_frame=nframe)
-            yield nframe
-            t += 1
+                r.render_frame(int(t/25*1000), background_frame=nframe)
+                yield nframe
+                t += 1
 
 
 

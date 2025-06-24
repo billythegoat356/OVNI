@@ -1,5 +1,7 @@
 import ctypes
 import atexit
+from typing import Self, Type, Literal
+from types import TracebackType
 
 import cupy as cp
 
@@ -7,7 +9,7 @@ from .lib import LibASS, ASS_Image
 from ..ops import blend_ass_image, blend
 
 
-class Renderer:
+class ASSRenderer:
     def __init__(self, ass_file: str, width: int, height: int) -> None:
         """
         Create a renderer for a given ASS file, width and height
@@ -86,6 +88,35 @@ class Renderer:
             self.track = None
 
     
+    def __enter__(self) -> Self:
+        """
+        Enter the context manager
+        Does not do anything since the renderer is initialized on object creation directly.
+
+        Returns:
+            Self
+        """
+        return self
+    
+
+    def __exit__(
+        self,
+        exc_type: Type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None
+    ) -> Literal[False]:
+        """
+        Exit the context manager
+        Unloads the renderer
+
+        Returns:
+            Literal[False]
+        """
+        self.unload_renderer()
+
+        return False # Do not suppress exception
+        
+
     def __del__(self) -> None:
         """
         Unloads on object deletion.
