@@ -4,7 +4,7 @@ import numpy as np
 import cupy as cp
 
 from .lib import LibASS, ASS_Image
-from ..ops import blend_ass_image
+from ..ops import blend_ass_image, blend
 
 
 class Renderer:
@@ -35,7 +35,7 @@ class Renderer:
 
         self.init_renderer()
 
-        # Create change detection and last rendered frame
+        # Create change detection and last rendered frame, for optimization
         self.detect_change = ctypes.c_int() # 0 if no change, 1 if positions changed, 2 if content changed
         self.last_rendered_frame: cp.ndarray | None = None
 
@@ -64,15 +64,17 @@ class Renderer:
         )
 
 
-    def render_frame(self, timestamp_ms: int) -> cp.ndarray:
+    def render_frame(self, timestamp_ms: int, background_frame: cp.ndarray | None = None) -> cp.ndarray | None:
         """
         Render a frame at a specific timestamp
+        You can pass a background_frame, on which the rendered frame will be blended
 
         Parameters:
             timestamp_ms: int
+            background_frame: cp.ndarray | None = None - optional background frame to blend the rendered frame in
 
         Returns:
-            cp.ndarray | None - a cupy array of the rendered frame
+            cp.ndarray | None - a cupy array of the rendered frame, or None if a background_frame was given or if the timestamp is out of the rendered ones
         """
         # Render frame
         img_ptr = LibASS.obj.ass_render_frame(
@@ -82,20 +84,29 @@ class Renderer:
             ctypes.byref(self.detect_change)
         )
 
-        # If there is no frame, return an empty array full of zeros
+        # If there is no frame at this timestamp, we return None
         if not img_ptr:
-            return cp.zeros((self.height, self.width, 4), dtype=cp.uint8)
+            return None
 
-        # We only do not re-process if nothing changed (positions change aren't handled, I assume these are a very rare use-case)
-        if self.detect_change.value == 0 and self.last_rendered_frame is not None:
-            return self.last_rendered_frame.copy() # Return a copy in case user operates on it
+        # We process the frame if its the first one, or if there was a change with the previous one (we don't handle positions changing, I assume this is a very rare case)
+        if self.last_rendered_frame is None or self.detect_change.value != 0:
+            # Convert to RGBA cupy array
+            frame = self._convert_to_rgba_array(img_ptr)
+
+            # Set last rendered frame
+            self.last_rendered_frame = frame
+
+        # Otherwise we pass the previously rendered one
+        else:
+            frame = self.last_rendered_frame
+
+        # If a background frame is not passed, we return a copy of the frame so the user can operate on it
+        if background_frame is None:
+            return frame.copy()
         
-        # Convert to RGBA cupy array
-        frame = self._convert_to_rgba_array(img_ptr)
-
-        # Set last rendered frame
-        self.last_rendered_frame = frame
-        return frame.copy() # Return a copy in case user operates on it
+        # Otherise we blend it on the background_frame
+        else:
+            blend(background_frame, frame, 0, 0)
     
     
     def _convert_to_rgba_array(self, img_ptr) -> cp.ndarray:

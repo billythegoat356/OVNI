@@ -30,9 +30,11 @@ def test_image():
         for _ in range(2000):
             nframe = frame.copy()
 
-            c_frame = bm.render_frame(int(t/25*1000))
-            if c_frame is not None:
-                blend(nframe, c_frame, 0, 0)
+            c_frame = bm.render_frame(int(t/25*1000), background_frame=nframe)
+
+            # c_frame = bm.render_frame(int(t/25*1000))
+            # if c_frame is not None:
+            #     blend(nframe, c_frame, 0, 0)
                 
             yield nframe
             t += 1
