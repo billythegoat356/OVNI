@@ -1,4 +1,5 @@
 import ctypes
+import atexit
 
 
 # ASS_Image structure definition (required for attributes access)
@@ -48,6 +49,22 @@ class LibASS:
         # We can now load the library
         cls.library = cls.obj.ass_library_init()
 
+        # Register the unload at exit
+        atexit.register(cls.unload)
+
+
+    @classmethod
+    def unload(cls) -> None:
+        """
+        Unloads the library.
+
+        Returns:
+            None
+        """
+        if cls.library is not None:
+            cls.obj.ass_library_done(cls.library)
+            cls.library = None
+
 
     @classmethod
     def set_types(cls) -> None:
@@ -61,6 +78,10 @@ class LibASS:
         # Initialization of library
         cls.obj.ass_library_init.argtypes = [] # Nothing
         cls.obj.ass_library_init.restype = ctypes.c_void_p # Pointer to ASS_Library
+
+        # Finalization of library
+        cls.obj.ass_library_done.argtypes = [ctypes.c_void_p] # Pointer to ASS_Library
+        cls.obj.ass_library_done.restype = None # Void
         
         # Initialization of renderer
         cls.obj.ass_renderer_init.argtypes = [ctypes.c_void_p] # Pointer to ASS_Library
