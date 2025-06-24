@@ -851,4 +851,22 @@ $L__BB6_2:
 	ret;
 
 }
+	// .globl	blend_ass_image
+.visible .entry blend_ass_image(
+	.param .u32 blend_ass_image_param_0,
+	.param .u32 blend_ass_image_param_1,
+	.param .u32 blend_ass_image_param_2,
+	.param .u64 blend_ass_image_param_3,
+	.param .u32 blend_ass_image_param_4,
+	.param .u32 blend_ass_image_param_5,
+	.param .u32 blend_ass_image_param_6,
+	.param .u64 blend_ass_image_param_7
+)
+{
+
+
+
+	ret;
+
+}
 

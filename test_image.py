@@ -26,7 +26,7 @@ def test_image():
     def process_frames(frame):
         nonlocal t
         LibASS.load()
-        bm = Renderer("videos/captions.ass", 1920, 1080)
+        bm = Renderer("videos/captions2.ass", 1920, 1080)
         for _ in range(2000):
             nframe = frame.copy()
 

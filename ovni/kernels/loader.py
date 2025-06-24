@@ -23,3 +23,6 @@ class Kernels:
 
     # Interpolation
     bilinear = mod.get_function("bilinear")
+
+    # Libass
+    blend_ass_image = mod.get_function("blend_ass_image")

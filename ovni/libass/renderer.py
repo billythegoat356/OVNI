@@ -4,7 +4,7 @@ import numpy as np
 import cupy as cp
 
 from .lib import LibASS, ASS_Image
-from ..ops import blend
+from ..ops import blend_ass_image
 
 
 class Renderer:
@@ -97,6 +97,35 @@ class Renderer:
         self.last_rendered_frame = frame
         return frame.copy() # Return a copy in case user operates on it
     
+    def _convert_to_rgba_array_new(self, img_ptr) -> cp.ndarray:
+        """
+        Convert libass image linked list to RGBA cupy array
+        ---------
+        Uses the custom CUDA kernel
+
+        Parameters:
+            img_ptr - pointer to ASS_Image
+
+        Returns:
+            cp.ndarray
+        """
+        # Create output cupy RGBA array
+        output = cp.zeros((self.height, self.width, 4), dtype=cp.uint8)
+
+        # Walk through linked list of images
+        while img_ptr:
+            # Access content of pointer (ASS_Image)
+            img = img_ptr.contents
+
+            # Blend image on output
+            blend_ass_image(output, img)
+
+            # Define img_ptr to the next linked one
+            img_ptr = img.next
+
+        return output
+
+
     def _convert_to_rgba_array(self, img_ptr) -> cp.ndarray:
         """
         Convert libass image linked list to RGBA cupy array
@@ -136,12 +165,9 @@ class Renderer:
             buf_type = ctypes.c_ubyte * (img.h * img.stride)
             buf = buf_type.from_address(ctypes.addressof(img.bitmap.contents))
 
-            # Load into numpy array
-            np_bitmap = cp.frombuffer(buf, dtype=cp.uint8).reshape((img.h, img.stride)) # Make sure the stride is respected at the last row
-            bitmap = np_bitmap[:, :img.w] # Now remove stride
-
-            # Convert to cupy
-            bitmap = cp.asarray(bitmap)
+            # Load into cupy array
+            bitmap = cp.frombuffer(buf, dtype=cp.uint8).reshape((img.h, img.stride))
+            bitmap = bitmap[:, :img.w] # Now remove stride
 
             # Extract coordinates of pixels that aren't zero (they have alpha and can be displaid)
             ys, xs = cp.nonzero(bitmap)

@@ -2,3 +2,4 @@
 
 #include "pixfmt.cu"
 #include "transform.cu"
+#include "libass.cu" // Utils for libass use only
