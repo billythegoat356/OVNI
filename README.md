@@ -15,9 +15,7 @@ I coded this in a few hours so there is definitely room for improvement, speed w
 - libass.c (only if you plan on using Advanced SubStation Alpha captions)
     
 # How to use? 
-Just check the code inside `ovni/base.py`. If you need more help then this project is probably not for you.   
-You can do **literally anything** you want directly on the CuPy arrays in GPU memory, and for a specific task you can write your own CUDA kernels or use the existing ones already made.   
-If you create one, feel free to make a pull request. (I won't accept it if the code is messy).   
+Check the [documentation](docs.md)
 
 # Benchmarks
 On my RTX 4080 Super, I achieve a speed of around **600 frames per second** without any operations on the frames, when decoding and encoding directly.   
