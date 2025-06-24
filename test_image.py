@@ -11,11 +11,15 @@ def test_image():
     start = time.time()
 
     frame = load_image("videos/image.png", gpu=True)
+    
 
     print(frame.shape)
 
 
     frame = resize(frame, 1920, 1080)
+
+    frame = cp.empty((1080, 1920, 3), cp.uint8)
+    frame[:, :, :] = cp.array([255, 0, 0], dtype=cp.uint8)
 
 
     print(frame.shape)
@@ -26,13 +30,28 @@ def test_image():
     def process_frames(frame):
         nonlocal t
         LibASS.load()
+        
+        # print("Storing overlay fully in memory once")
+        # overlay = demux_and_decode("videos/ov1.mp4")
+        # overlay = list(pipe_nv12_to_rgb(overlay, 1920, 1080))
+        
         with ASSRenderer("videos/captions2.ass", 1920, 1080) as r:
-            for _ in range(2000):
-                nframe = frame.copy()
+            
+            for _ in range(2):
 
-                r.render_frame(int(t/25*1000), background_frame=nframe)
-                yield nframe
-                t += 1
+                print("Reloading overlay each time")
+                overlay = demux_and_decode("videos/ov1.mp4")
+                overlay = pipe_nv12_to_rgb(overlay, 1920, 1080)
+                
+                for oframe in overlay:
+                    nframe = frame.copy()
+
+                    oframe = chroma_key(oframe, (0, 0, 0), 0, 500)
+                    blend(nframe, oframe, 0, 0)
+
+                    # r.render_frame(int(t/25*1000), background_frame=nframe)
+                    yield nframe
+                    t += 1
 
 
 
@@ -50,7 +69,7 @@ def test_image():
     mux(
         h264_stream=h264_stream,
         output_path="videos/out.mp4",
-        audio_path='videos/audio.mp3'
+        # audio_path='videos/audio.mp3'
     )
 
 

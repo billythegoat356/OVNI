@@ -2,4 +2,5 @@
 
 #include "pixfmt.cu"
 #include "transform.cu"
-#include "libass.cu" // Utils for libass use only
+#include "filter.cu"
+#include "libass.cu" // Utils for internal libass use only

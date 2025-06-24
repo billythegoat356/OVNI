@@ -24,5 +24,9 @@ class Kernels:
     # Interpolation
     bilinear = mod.get_function("bilinear")
 
+    # Filter
+    chroma_key = mod.get_function("chroma_key")
+    
+
     # Libass
     blend_ass_image = mod.get_function("blend_ass_image")
