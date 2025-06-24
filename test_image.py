@@ -28,7 +28,7 @@ def test_image():
         LibASS.load()
         bm = Renderer("videos/captions.ass", 1920, 1080)
         for _ in range(1000):
-            c_frame = bm.get_frame_at(int(t/25*1000))
+            c_frame = bm.render_frame(int(t/25*1000))
             nframe = frame.copy()
             if c_frame is not None:
                 blend(nframe, c_frame, 0, 0)

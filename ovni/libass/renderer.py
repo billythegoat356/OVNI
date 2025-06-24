@@ -64,7 +64,7 @@ class Renderer:
         )
 
 
-    def get_frame_at(self, timestamp_ms: int) -> cp.ndarray:
+    def render_frame(self, timestamp_ms: int) -> cp.ndarray:
         """
         Render a frame at a specific timestamp
 
@@ -107,7 +107,7 @@ class Renderer:
         Iterate over bitmap:
             - calculate alpha
             - add it on the array
-        Overlay it on output at given coords
+        Blend it on output at given coords using formula: a1 + a2 * (1 - a1)
         Keep going until we don't have a pointer (nothing to render)
 
         Parameters:
@@ -117,7 +117,7 @@ class Renderer:
             cp.ndarray
         """
         # Create output cupy RGBA array
-        output = cp.zeros((self.height, self.width, 4), dtype=cp.uint8)
+        output = np.zeros((self.height, self.width, 4), dtype=np.uint8)
 
         # Walk through linked list of images
         while img_ptr:
@@ -132,47 +132,42 @@ class Renderer:
             B = (color >> 8) & 0xff # Shift by 1 byte, keep first byte
             A = (255 - (color & 0xff)) # Keep first byte, and libass inverts alpha
 
+            # Create buffer with correct type and load bitmap
+            buf_type = ctypes.c_ubyte * (img.h * img.stride)
+            buf = buf_type.from_address(ctypes.addressof(img.bitmap.contents))
 
-            for y in range(img.h):
-                for x in range(img.w):
-                    # Calculate pixel position with stride formula
-                    pix_pos = y*img.stride + x
-
-                    # Get the pixel
-                    alpha = img.bitmap[pix_pos]
-
-                    # Only update if not transparent
-                    if alpha != 0:
-                        # Calculate overlay alpha
-                        ov_alpha = (alpha * A) / 255
-
-                        # Output coords
-                        ox = x + img.dst_x
-                        oy = y + img.dst_y
-
-                        # Overlay on the output
-
-                        # Get original alpha
-                        og_alpha = output[oy, ox, 3]
-
-                        # Calculate coefficients of alphas
-                        ov_alpha = float(ov_alpha) / 255
-                        og_alpha = float(og_alpha) / 255
-
-                        # Calculate alpha result - new combined opacity
-                        alpha_r = ov_alpha + og_alpha * (1 - ov_alpha)
-
-                        # Add RGB
-                        output[oy, ox, 0] = (R * ov_alpha + output[oy, ox, 0] * og_alpha * (1 - ov_alpha)) / alpha_r
-                        output[oy, ox, 1] = (G * ov_alpha + output[oy, ox, 1] * og_alpha * (1 - ov_alpha)) / alpha_r
-                        output[oy, ox, 2] = (B * ov_alpha + output[oy, ox, 2] * og_alpha * (1 - ov_alpha)) / alpha_r
-
-                        # Add alpha result
-                        output[oy, ox, 3] = alpha_r * 255
+            # Load into numpy array
+            np_bitmap = np.frombuffer(buf, dtype=np.uint8).reshape((img.h, img.stride))
+            bitmap = np_bitmap[:, :img.w] # Remove stride
             
+            # Where to update
+            mask = bitmap > 0
+
+            # Extract coordinates of pixels to update
+            ys, xs = np.nonzero(mask)
+            
+            # Calculate overlay alpha normalized to [0,1]
+            ov_alpha = (bitmap[ys, xs].astype(np.float32) * A) / (255 * 255)
+
+            # Compute original alpha normalized to [0,1]
+            og_alpha = output[ys + img.dst_y, xs + img.dst_x, 3].astype(np.float32) / 255
+
+            # Compute resulting alpha
+            alpha_r = ov_alpha + og_alpha * (1 - ov_alpha)
+
+            # Precompute coefficients for color channels
+            coef_overlay = ov_alpha / alpha_r
+            coef_orig = og_alpha * (1 - ov_alpha) / alpha_r
+
+            # Update color channels all at once using broadcasting
+            output[ys + img.dst_y, xs + img.dst_x, 0] = R * coef_overlay + output[ys + img.dst_y, xs + img.dst_x, 0] * coef_orig
+            output[ys + img.dst_y, xs + img.dst_x, 1] = G * coef_overlay + output[ys + img.dst_y, xs + img.dst_x, 1] * coef_orig
+            output[ys + img.dst_y, xs + img.dst_x, 2] = B * coef_overlay + output[ys + img.dst_y, xs + img.dst_x, 2] * coef_orig
+
+            # Update alpha channel
+            output[ys + img.dst_y, xs + img.dst_x, 3] = alpha_r * 255
 
             # Define img_ptr to the next linked one
             img_ptr = img.next
 
-        return output
-
+        return cp.asarray(output)
