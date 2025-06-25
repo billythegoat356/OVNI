@@ -4,7 +4,7 @@ from ovni.ops import *
 from ovni.ass import ASSRenderer, LibASS
 
 
-def test_image(i=0):
+def test_image():
 
     import time
 
@@ -32,7 +32,7 @@ def test_image(i=0):
 
         with ASSRenderer("videos/captions2.ass", 1920, 1080) as r:
             
-            frames_n = 4000
+            frames_n = 6000
             for _ in range(frames_n):
 
                 nframe = frame.copy()
@@ -56,12 +56,14 @@ def test_image(i=0):
         frames=frames,
         width=1920,
         height=1080,
-        fps=25
+        fps=25,
+        bitrate='3M',
+        preset='P3'
     )
 
     mux(
         h264_stream=h264_stream,
-        output_path=f"videos/out{i}.mp4",
+        output_path=f"videos/out.mp4",
         # audio_path='videos/audio.mp3'
     )
 
@@ -71,6 +73,8 @@ def test_image(i=0):
 
 
     d = t/25
+    print(f"Duration: {d//60}min {d%60}s")
+
     s = round(d/(time.time() - start), 2)
     print(f"Speed: x{s}")
 

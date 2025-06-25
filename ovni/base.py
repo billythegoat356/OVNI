@@ -122,6 +122,7 @@ def demux_and_decode(input_path: str, frame_count: int | None = None) -> Generat
 
     finally:
         cuda_ctx.pop()
+        cuda_ctx.detach()
 
 
 
@@ -243,6 +244,7 @@ def encode(frames: Iterable[cp.ndarray], width: int, height: int, fps: int, bitr
         yield encoded_bytes
     finally:
         cuda_ctx.pop()
+        cuda_ctx.detach()
 
 
 
