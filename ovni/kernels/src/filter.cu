@@ -1,11 +1,4 @@
 
-__device__ inline float clampf(
-    float value,
-    float lower,
-    float upper
-) {
-    return (value < lower) ? lower : (value > upper) ? upper : value;
-}
 
 extern "C" __global__
 void chroma_key(
@@ -36,7 +29,7 @@ void chroma_key(
 
     // Calculate alpha
     float alpha = (metric - transparencyT) / (float)(opacityT - transparencyT);
-    unsigned char n_alpha = (unsigned char)(clampf(alpha * 255, 0.0f, 255.0f));
+    unsigned char n_alpha = (unsigned char)(fmin(fmax(alpha * 255, 0.0f), 255.0f));
 
     src[index + 3] = n_alpha;
 }

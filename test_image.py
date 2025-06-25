@@ -13,16 +13,7 @@ def test_image():
     frame = load_image("videos/image.png", gpu=True)
     
 
-    print(frame.shape)
 
-
-    frame = resize(frame, 1920, 1080)
-
-    frame = cp.empty((1080, 1920, 3), cp.uint8)
-    frame[:, :, :] = cp.array([255, 0, 0], dtype=cp.uint8)
-
-
-    print(frame.shape)
 
 
     t = 0
@@ -31,30 +22,54 @@ def test_image():
         nonlocal t
         # LibASS.load()
         
+        
+
+        def go():
+            print("Reloading overlay each time")
+            while True:
+                overlay = demux_and_decode("videos/ov1.mp4")
+                overlay = pipe_nv12_to_rgb(overlay, 1920, 1080)
+                yield from overlay
+        overlay = go()
+        
         # print("Storing overlay fully in memory once")
         # overlay = demux_and_decode("videos/ov1.mp4")
         # overlay = pipe_nv12_to_rgb(overlay, 1920, 1080)
-        # overlay = (chroma_key(o, (0, 0, 0), 0, 255) for o in overlay)
         # overlay = list(overlay)
 
 
+        def get_ov():
+            i = 0
+            if isinstance(overlay, list):
+                while True:
+                    yield overlay[i%len(overlay)]
+                    i += 1
+            else:
+                yield from overlay
+
+        o = get_ov()
+
         with ASSRenderer("videos/captions2.ass", 1920, 1080) as r:
             
-            for _ in range(5):
+            frames_n = 4000
+            for _ in range(frames_n):
+                oframe = next(o)
 
-                print("Reloading overlay each time")
-                overlay = demux_and_decode("videos/ov1.mp4")
-                overlay = pipe_nv12_to_rgb(overlay, 1920, 1080)
-                
-                for oframe in overlay:
-                    nframe = frame.copy()
+                nframe = frame.copy()
 
-                    oframe = chroma_key(oframe, (0, 0, 0), 150, 255)
-                    blend(nframe, oframe, 0, 0)
+                s = 1.3 + t/frames_n
 
-                    r.render_frame(int(t/25*1000), background_frame=nframe)
-                    yield nframe
-                    t += 1
+                tx = t/100 * 1920 / 3000
+                ty = t/100 * 1080 / 3000
+
+                nframe = scale_translate(nframe, s, tx, ty, 1920, 1080)
+
+                oframe = chroma_key(oframe, (0, 0, 0), 150, 255)
+                blend(nframe, oframe, 0, 0)
+
+                r.render_frame(int(t/25*1000), background_frame=nframe)
+                yield nframe
+                t += 1
 
 
 
