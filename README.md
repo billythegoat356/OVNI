@@ -22,6 +22,7 @@ Check the [documentation](docs.md).
 
 # Todo
 - Rewrite overlay/blend to take in X, Y, and overlay top left coords to bottom right. Allowing for general interpolation.
+- Make a custom object for frames, with attribute methods that operate directly on it and better typing support.
 
 # Benchmarks
 On my RTX 4080 Super, I achieve a speed of around **720 frames per second** without any operations on the frames, when decoding and encoding directly.   
