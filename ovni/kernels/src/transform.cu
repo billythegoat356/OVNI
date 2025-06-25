@@ -27,7 +27,7 @@ void scale_translate(
     unsigned char G;
     unsigned char B;
 
-    bilinear_one(src, srcw, srch, sx, sy, &R, &G, &B);
+    bilinear_pixel(src, srcw, srch, sx, sy, &R, &G, &B);
 
     // Update in destination
     dst[flattened_coords] = R;
@@ -61,7 +61,7 @@ void resize(
     unsigned char G;
     unsigned char B;
 
-    bilinear_one(src, srcw, srch, sx, sy, &R, &G, &B);
+    bilinear_pixel(src, srcw, srch, sx, sy, &R, &G, &B);
 
     // Update in destination
     dst[flattened_coords] = R;

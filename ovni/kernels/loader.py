@@ -22,7 +22,7 @@ class Kernels:
     blend = mod.get_function("blend")
 
     # Interpolation
-    bilinear = mod.get_function("bilinear")
+    bilinear_blend = mod.get_function("bilinear_blend")
 
     # Filter
     chroma_key = mod.get_function("chroma_key")

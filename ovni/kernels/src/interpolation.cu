@@ -1,7 +1,8 @@
 
 
+// Applies bilinear interpolation at the given coordinates
 __device__
-void bilinear_one(
+void bilinear_pixel(
     const unsigned char* src,
     int width,
     int height,
@@ -58,8 +59,9 @@ void bilinear_one(
 }
 
 
+// Applies bilinear blending between 4 images
 extern "C" __global__
-void bilinear(
+void bilinear_blend(
     unsigned char* dst,
     const unsigned char* top_left,
     const unsigned char* top_right,

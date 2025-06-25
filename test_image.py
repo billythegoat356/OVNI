@@ -62,10 +62,11 @@ def test_image():
                 tx = t/100 * 1920 / 3000
                 ty = t/100 * 1080 / 3000
 
-                nframe = scale_translate(nframe, s, tx, ty, 1920, 1080)
+                # nframe = scale_translate(nframe, s, tx, ty, 1920, 1080)
+                nframe = resize(nframe, 1920, 1080)
 
                 oframe = chroma_key(oframe, (0, 0, 0), 150, 255)
-                blend(nframe, oframe, 0, 0)
+                blend(nframe, oframe, t, t)
 
                 r.render_frame(int(t/25*1000), background_frame=nframe)
                 yield nframe

@@ -1,7 +1,7 @@
 import cupy as cp
 
 from ..kernels import Kernels, THREADS, make_blocks
-from .interpolation import bilinear
+from .interpolation import bilinear_blend
 
 
 
@@ -252,7 +252,7 @@ def overlay(src: cp.ndarray, overlay_arr: cp.ndarray, x: int | float, y: int | f
             overlay(top_right, clipped_overlay, 1, 0)
 
 
-        arr = bilinear(
+        arr = bilinear_blend(
             top_left, top_right, bottom_left, bottom_right,
             x_distance, y_distance
         )
@@ -361,7 +361,7 @@ def blend(src: cp.ndarray, overlay_arr: cp.ndarray, x: int | float, y: int | flo
             blend(top_right, clipped_overlay, 1, 0)
 
 
-        arr = bilinear(
+        arr = bilinear_blend(
             top_left, top_right, bottom_left, bottom_right,
             x_distance, y_distance
         )

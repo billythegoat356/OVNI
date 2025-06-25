@@ -3,7 +3,7 @@ import cupy as cp
 from ..kernels import Kernels, THREADS, make_blocks
 
 
-def bilinear(
+def bilinear_blend(
         top_left: cp.ndarray,
         top_right: cp.ndarray,
         bottom_left: cp.ndarray,
@@ -12,7 +12,7 @@ def bilinear(
         y_distance: float
 ) -> cp.ndarray:
     """
-    Use bilinear interpolation between 4 areas, with a specific distance for each axis.
+    Use bilinear interpolation between 4 images, with a specific distance for each axis.
     Note that the distance should be a float between 0 and 1, 0 meaning that the first matrix is the same, 1 meaning that its closer to the second other one.
     
     Parameters:
