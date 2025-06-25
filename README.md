@@ -25,7 +25,8 @@ Check the [documentation](docs.md).
 - Make a custom object for frames, with attribute methods that operate directly on it and better typing support.
 
 # Benchmarks
-On my RTX 4080 Super, I achieve a speed of around **720 frames per second** without any operations on the frames, when decoding and encoding directly.   
+On my RTX 4080 Super, I achieve a speed of around **720 frames per second** without any operations on the frames, when decoding and encoding directly *with preset 3*.   
+With preset 1, which gives lower quality, I achieve around **1060 frames per second**, and **360** with preset 7.   
 Note that if written correctly, the operations on frames should be nearly instantaneous, and the bottleneck should be in decoding.   
 
 # Collaborate
