@@ -26,7 +26,7 @@
 {
 	.reg .pred 	%p<4>;
 	.reg .b16 	%rs<13>;
-	.reg .f32 	%f<36>;
+	.reg .f32 	%f<39>;
 	.reg .b32 	%r<16>;
 	.reg .b64 	%rd<17>;
 
@@ -109,13 +109,16 @@
 	fma.rn.f32 	%f33, %f29, %f12, %f32;
 	mul.f32 	%f34, %f28, %f2;
 	fma.rn.f32 	%f35, %f29, %f16, %f34;
-	cvt.rzi.u32.f32 	%r13, %f31;
+	add.f32 	%f36, %f31, 0f40900000;
+	cvt.rzi.u32.f32 	%r13, %f36;
 	cvta.to.global.u64 	%rd15, %rd1;
 	add.s64 	%rd16, %rd15, %rd6;
 	st.global.u8 	[%rd16], %r13;
-	cvt.rzi.u32.f32 	%r14, %f33;
+	add.f32 	%f37, %f33, 0f40900000;
+	cvt.rzi.u32.f32 	%r14, %f37;
 	st.global.u8 	[%rd16+1], %r14;
-	cvt.rzi.u32.f32 	%r15, %f35;
+	add.f32 	%f38, %f35, 0f40900000;
+	cvt.rzi.u32.f32 	%r15, %f38;
 	st.global.u8 	[%rd16+2], %r15;
 
 $L__BB0_2:

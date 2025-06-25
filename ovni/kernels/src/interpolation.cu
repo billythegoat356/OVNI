@@ -94,9 +94,9 @@ void bilinear_blend(
     G = G * (1 - y_distance) + G2 * y_distance;
     B = B * (1 - y_distance) + B2 * y_distance;
 
-    dst[coords] = (unsigned char)(R);
-    dst[coords + 1] = (unsigned char)(G);
-    dst[coords + 2] = (unsigned char)(B);
+    dst[coords]     = (unsigned char)(R + 0.5f);
+    dst[coords + 1] = (unsigned char)(G + 0.5f);
+    dst[coords + 2] = (unsigned char)(B + 0.5f);
 }
 
 
@@ -128,7 +128,7 @@ void linear_blend(
     G = src1[coords + 1] * (1 - distance) + src2[coords + 1] * distance;
     B = src1[coords + 2] * (1 - distance) + src2[coords + 2] * distance;
 
-    dst[coords] = (unsigned char)(R);
-    dst[coords + 1] = (unsigned char)(G);
-    dst[coords + 2] = (unsigned char)(B);
+    dst[coords] = (unsigned char)(R + 0.5f);
+    dst[coords + 1] = (unsigned char)(G + 0.5f);
+    dst[coords + 2] = (unsigned char)(B + 0.5f);
 }
