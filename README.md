@@ -1,4 +1,4 @@
-# Optimized Video Native Interface 
+# Optimized Video Native Interface 🛸
 I was getting frustrated at FFmpeg being so slow/buggy on specific tasks, and I won't even talk about MoviePy (some people still use it apparently, and wonder why it takes 1 hour to process a 5 minutes video...)   
 So I decided to make my custom video processing pipeline taking full advantage of my GPU.   
 
