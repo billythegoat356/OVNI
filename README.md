@@ -20,6 +20,9 @@ I coded this in 2 days so there is definitely room for improvement, speed wise a
 # How to use? 
 Check the [documentation](docs.md).
 
+# Todo
+- Rewrite overlay/blend to take in X, Y, and overlay top left coords to bottom right. Allowing for general interpolation.
+
 # Benchmarks
 On my RTX 4080 Super, I achieve a speed of around **720 frames per second** without any operations on the frames, when decoding and encoding directly.   
 Note that if written correctly, the operations on frames should be nearly instantaneous, and the bottleneck should be in decoding.   
