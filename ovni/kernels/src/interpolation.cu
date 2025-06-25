@@ -80,35 +80,19 @@ void bilinear_blend(
 
     int coords = (y * width + x) * 3;
 
-    float R;
-    float G;
-    float B;
+    // Calculate X values
+    float R = top_left[coords] * (1 - x_distance) + top_right[coords] * x_distance;
+    float G = top_left[coords + 1] * (1 - x_distance) + top_right[coords + 1] * x_distance;
+    float B = top_left[coords + 2] * (1 - x_distance) + top_right[coords + 2] * x_distance;
 
-    // If the X distance doesnt change, calculate distance of Y axis matrixes
-    // This shouldn't happen, call linear instead
-    if (x_distance == int(x_distance)) {
-        R = top_left[coords] * (1 - y_distance) + bottom_left[coords] * y_distance;
-        G = top_left[coords + 1] * (1 - y_distance) + bottom_left[coords + 1] * y_distance;
-        B = top_left[coords + 2] * (1 - y_distance) + bottom_left[coords + 2] * y_distance;
-    }
-    // Otherwise, always calculate X distance
-    else {
-        R = top_left[coords] * (1 - x_distance) + top_right[coords] * x_distance;
-        G = top_left[coords + 1] * (1 - x_distance) + top_right[coords + 1] * x_distance;
-        B = top_left[coords + 2] * (1 - x_distance) + top_right[coords + 2] * x_distance;
+    float R2 = bottom_left[coords] * (1 - x_distance) + bottom_right[coords] * x_distance;
+    float G2 = bottom_left[coords + 1] * (1 - x_distance) + bottom_right[coords + 1] * x_distance;
+    float B2 = bottom_left[coords + 2] * (1 - x_distance) + bottom_right[coords + 2] * x_distance;
 
-        // If we must also calculate Y distance, do it
-        // Same here
-        if (y_distance != int(y_distance)) {
-            float R2 = bottom_left[coords] * (1 - x_distance) + bottom_right[coords] * x_distance;
-            float G2 = bottom_left[coords + 1] * (1 - x_distance) + bottom_right[coords + 1] * x_distance;
-            float B2 = bottom_left[coords + 2] * (1 - x_distance) + bottom_right[coords + 2] * x_distance;
-
-            R = R * (1 - y_distance) + R2 * y_distance;
-            G = G * (1 - y_distance) + G2 * y_distance;
-            B = B * (1 - y_distance) + B2 * y_distance;
-        }
-    }
+    // Now calculate Y
+    R = R * (1 - y_distance) + R2 * y_distance;
+    G = G * (1 - y_distance) + G2 * y_distance;
+    B = B * (1 - y_distance) + B2 * y_distance;
 
     dst[coords] = (unsigned char)(R);
     dst[coords + 1] = (unsigned char)(G);
