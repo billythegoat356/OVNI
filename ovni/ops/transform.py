@@ -186,6 +186,10 @@ def overlay(src: cp.ndarray, overlay_arr: cp.ndarray, x: int | float, y: int | f
     Overlays an array on the source one, at the given position, with optional custom alpha channel
     Non integer position is allowed, in this case the image will be interpolated.
     Modifies it inplace
+    ---------
+    NOTE
+    The support for blending isn't fully optimized. We overlay it 2/4 times and blend, then again on the final frame.
+    We could instead rewrite the cuda kernel to blend the pixels directly.
 
     Parameters:
         src: cp.ndarray
