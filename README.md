@@ -21,6 +21,7 @@ I coded this in 2 days so there is definitely room for improvement, speed wise a
 Check the [documentation](docs.md). Most of the animations you can think of can be done with those basics methods.   
 
 # Todo
+- Fix memory leak
 - Rewrite overlay/blend to take in X, Y, and overlay top left coords to bottom right. Allowing for general interpolation, meaning smoother specific animations.   
 - Make a custom object for frames, with attribute methods that operate directly on it and better typing support.
 
