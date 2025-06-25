@@ -5,8 +5,6 @@ import atexit
 import pycuda.driver as cuda
 import PyNvVideoCodec as nvc
 import cupy as cp
-import numpy as np
-from PIL import Image
 import cv2
 
 import pycuda.autoinit # Required
