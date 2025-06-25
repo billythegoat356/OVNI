@@ -24,6 +24,10 @@ def init_cuda():
     """
     Initializes cuda in the given thread and returns the context
     Do not forget to call `.pop()` when you don't need it anymore.
+    ----------
+    So you can understand, the cuda device is loaded here after NVC and other libs loaded.
+    Also, it is context-sensitive, it has to be created where its used, this is why we create it in the caller thread.
+    Same for the `retain_primary_context` method. We don't make a new context because we want to use the one also used by the libs.
     """
     cuda_device = cuda.Device(GPU_ID)
     cuda_ctx = cuda_device.retain_primary_context()

@@ -4,7 +4,7 @@ from ovni.ops import *
 from ovni.ass import ASSRenderer, LibASS
 
 
-def test_image():
+def test_image(i=0):
 
     import time
 
@@ -61,7 +61,7 @@ def test_image():
 
     mux(
         h264_stream=h264_stream,
-        output_path="videos/out.mp4",
+        output_path=f"videos/out{i}.mp4",
         # audio_path='videos/audio.mp3'
     )
 
@@ -76,4 +76,13 @@ def test_image():
 
 
 if __name__ == '__main__':
+    # from threading import Thread
+
+    # t = Thread(target=test_image)
+    # t2 = Thread(target=test_image, args=[1])
+    # t.start()
+    # t2.start()
+    # # test_image()
+    # t.join()
+    # t2.join()
     test_image()
