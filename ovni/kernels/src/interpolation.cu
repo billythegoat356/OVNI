@@ -85,6 +85,7 @@ void bilinear_blend(
     float B;
 
     // If the X distance doesnt change, calculate distance of Y axis matrixes
+    // This shouldn't happen, call linear instead
     if (x_distance == int(x_distance)) {
         R = top_left[coords] * (1 - y_distance) + bottom_left[coords] * y_distance;
         G = top_left[coords + 1] * (1 - y_distance) + bottom_left[coords + 1] * y_distance;
@@ -97,6 +98,7 @@ void bilinear_blend(
         B = top_left[coords + 2] * (1 - x_distance) + top_right[coords + 2] * x_distance;
 
         // If we must also calculate Y distance, do it
+        // Same here
         if (y_distance != int(y_distance)) {
             float R2 = bottom_left[coords] * (1 - x_distance) + bottom_right[coords] * x_distance;
             float G2 = bottom_left[coords + 1] * (1 - x_distance) + bottom_right[coords + 1] * x_distance;
@@ -107,6 +109,40 @@ void bilinear_blend(
             B = B * (1 - y_distance) + B2 * y_distance;
         }
     }
+
+    dst[coords] = (unsigned char)(R);
+    dst[coords + 1] = (unsigned char)(G);
+    dst[coords + 2] = (unsigned char)(B);
+}
+
+
+
+// Applies linear blending between 2 images
+extern "C" __global__
+void linear_blend(
+    unsigned char* dst,
+    const unsigned char* src1,
+    const unsigned char* src2,
+    int width,
+    int height,
+    float distance
+) {
+
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (x >= width || y >= height) return;
+
+    int coords = (y * width + x) * 3;
+
+    float R;
+    float G;
+    float B;
+
+    // Calculate distance on one dimension
+    R = src1[coords] * (1 - distance) + src2[coords] * distance;
+    G = src1[coords + 1] * (1 - distance) + src2[coords + 1] * distance;
+    B = src1[coords + 2] * (1 - distance) + src2[coords + 2] * distance;
 
     dst[coords] = (unsigned char)(R);
     dst[coords + 1] = (unsigned char)(G);

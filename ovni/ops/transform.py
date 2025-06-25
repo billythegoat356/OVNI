@@ -1,7 +1,7 @@
 import cupy as cp
 
 from ..kernels import Kernels, THREADS, make_blocks
-from .interpolation import bilinear_blend
+from .interpolation import bilinear_blend, linear_blend
 
 
 
@@ -235,31 +235,41 @@ def overlay(src: cp.ndarray, overlay_arr: cp.ndarray, x: int | float, y: int | f
             overlay(bottom_left, clipped_overlay, 0, 1)
             overlay(bottom_right, clipped_overlay, 1, 1)
 
+            arr = bilinear_blend(
+                top_left, top_right, bottom_left, bottom_right,
+                x_distance, y_distance
+            )
+
+
         elif y != int(y):
             # Requires interpolation only on Y axis
-            top_left = top_right = clipped_src.copy()
-            bottom_left = bottom_right = clipped_src.copy()
+            top = clipped_src.copy()
+            bottom = clipped_src.copy()
 
-            overlay(top_left, clipped_overlay, 0, 0)
-            overlay(bottom_left, clipped_overlay, 0, 1)
+            overlay(top, clipped_overlay, 0, 0)
+            overlay(bottom, clipped_overlay, 0, 1)
+
+            arr = linear_blend(
+                top, bottom,
+                y_distance
+            )
 
         else:
             # Requires interpolation only on X axis
-            top_left = bottom_left = clipped_src.copy()
-            top_right = bottom_right = clipped_src.copy()
+            left = clipped_src.copy()
+            right = clipped_src.copy()
 
-            overlay(top_left, clipped_overlay, 0, 0)
-            overlay(top_right, clipped_overlay, 1, 0)
+            overlay(left, clipped_overlay, 0, 0)
+            overlay(right, clipped_overlay, 1, 0)
 
+            arr = linear_blend(
+                left, right,
+                x_distance
+            )
 
-        arr = bilinear_blend(
-            top_left, top_right, bottom_left, bottom_right,
-            x_distance, y_distance
-        )
         overlay(src, arr, left_x, top_y, alpha=alpha) # Only apply alpha once
 
     else:
-        
         if alpha == 1:
             # Overlay is fully opaque, we can simply replace the pixels
             src[top_y:bottom_y, left_x:right_x, :] = clipped_overlay
@@ -344,27 +354,38 @@ def blend(src: cp.ndarray, overlay_arr: cp.ndarray, x: int | float, y: int | flo
             blend(bottom_left, clipped_overlay, 0, 1)
             blend(bottom_right, clipped_overlay, 1, 1)
 
+            arr = bilinear_blend(
+                top_left, top_right, bottom_left, bottom_right,
+                x_distance, y_distance
+            )
+
         elif y != int(y):
             # Requires interpolation only on Y axis
-            top_left = top_right = clipped_src.copy()
-            bottom_left = bottom_right = clipped_src.copy()
+            top = clipped_src.copy()
+            bottom = clipped_src.copy()
 
-            blend(top_left, clipped_overlay, 0, 0)
-            blend(bottom_left, clipped_overlay, 0, 1)
+            blend(top, clipped_overlay, 0, 0)
+            blend(bottom, clipped_overlay, 0, 1)
+
+            arr = linear_blend(
+                top, bottom,
+                y_distance
+            )
 
         else:
             # Requires interpolation only on X axis
-            top_left = bottom_left = clipped_src.copy()
-            top_right = bottom_right = clipped_src.copy()
+            left = clipped_src.copy()
+            right = clipped_src.copy()
 
-            blend(top_left, clipped_overlay, 0, 0)
-            blend(top_right, clipped_overlay, 1, 0)
+            blend(left, clipped_overlay, 0, 0)
+            blend(right, clipped_overlay, 1, 0)
 
+            arr = linear_blend(
+                left, left,
+                x_distance
+            )
 
-        arr = bilinear_blend(
-            top_left, top_right, bottom_left, bottom_right,
-            x_distance, y_distance
-        )
+        
         overlay(src, arr, left_x, top_y) # No alpha now
 
     else:

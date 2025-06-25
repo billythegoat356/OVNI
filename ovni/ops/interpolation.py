@@ -49,3 +49,44 @@ def bilinear_blend(
         )
     )
     return dst
+
+
+
+
+def linear_blend(
+        img1: cp.ndarray,
+        img2: cp.ndarray,
+        distance: float
+) -> cp.ndarray:
+    """
+    Use linear interpolation between 2 images, with a specific distance
+    Note that the distance should be a float between 0 and 1, 0 meaning that the first matrix is the same, 1 meaning that its closer to the second other one.
+    
+    Parameters:
+        img1: cp.ndarray
+        img2: cp.ndarray
+        distance: float - 0 -> 1 
+
+    Returns:
+        cp.ndarray
+    """
+    width = img1.shape[1]
+    height = img1.shape[0]
+
+    # Create output array
+    dst = cp.empty((height, width, 3), dtype=cp.uint8)
+
+    blocks = make_blocks(width, height)
+
+    Kernels.linear_blend(
+        blocks, THREADS,
+        (
+            dst.ravel(),
+            img1.ravel(),
+            img2.ravel(),
+            cp.int32(width),
+            cp.int32(height),
+            cp.float32(distance)
+        )
+    )
+    return dst
