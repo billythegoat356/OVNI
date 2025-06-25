@@ -140,7 +140,7 @@ def load_image(path: str, gpu: bool = True) -> cp.ndarray:
 
 
 
-def encode(frames: Iterable[cp.ndarray], width: int, height: int, fps: int) -> Generator[bytes, None, None]:
+def encode(frames: Iterable[cp.ndarray], width: int, height: int, fps: int, bitrate: str = BITRATE, preset: str = PRESET) -> Generator[bytes, None, None]:
     """
     Takes an iterable of CuPy arrays, and encodes them into a H264 bytestream
     -----------
@@ -151,6 +151,8 @@ def encode(frames: Iterable[cp.ndarray], width: int, height: int, fps: int) -> G
         width: int
         height: int
         fps: int
+        bitrate: str = BITRATE
+        preset: str = PRESET
 
     Returns:
         Generator[bytes, None, None]
@@ -181,7 +183,7 @@ def encode(frames: Iterable[cp.ndarray], width: int, height: int, fps: int) -> G
     config_params = {
         'gpuid': GPU_ID,
         'codec': CODEC,
-        'preset': PRESET,
+        'preset': preset,
         'cudacontext': cuda_ctx.handle,
         'cudastream': cuda_stream.handle,
         'tuning_info': 'low_latency',
@@ -189,7 +191,7 @@ def encode(frames: Iterable[cp.ndarray], width: int, height: int, fps: int) -> G
         'fps': fps,
         'gop': fps,
         'bf': 0,
-        'bitrate': BITRATE,
+        'bitrate': bitrate,
         'maxbitrate': 0,
         'vbvinit': 0,
         'vbvbufsize': 0,
