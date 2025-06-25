@@ -34,7 +34,7 @@ def bilinear_blend(
 
     blocks = make_blocks(width, height)
 
-    Kernels.bilinear(
+    Kernels.bilinear_blend(
         blocks, THREADS,
         (
             dst.ravel(),
