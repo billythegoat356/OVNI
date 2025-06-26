@@ -64,39 +64,48 @@ def demux_and_decode(input_path: str, frame_count: int | None = None) -> Generat
     frame_shape = None
 
 
-    # Iterate over all packets
-    for packet in nv_dmx:
+    while True:
+        # Iterate over all packets
+        for packet in nv_dmx:
 
-        # Market the packet as containing complete frames
-        packet.decode_flag = nvc.VideoPacketFlag.ENDOFPICTURE
+            # Market the packet as containing complete frames
+            packet.decode_flag = nvc.VideoPacketFlag.ENDOFPICTURE
 
-        # Decode packet and iterate over frames
-        for decoded_frame in nv_dec.Decode(packet):
+            # Decode packet and iterate over frames
+            for decoded_frame in nv_dec.Decode(packet):
 
-            if passed_frames == frame_count:
-                return
-            
-            # 'decoded_frame' contains list of views implementing cuda array interface
-            # For nv12, it would contain 2 views for each plane and two planes would be contiguous 
+                if passed_frames == frame_count:
+                    return
+                
+                # 'decoded_frame' contains list of views implementing cuda array interface
+                # For nv12, it would contain 2 views for each plane and two planes would be contiguous 
 
-            # Get decoded frame shape only once
-            if frame_shape is None:
-                frame_shape = nv_dec.GetFrameSize()
+                # Get decoded frame shape only once
+                if frame_shape is None:
+                    frame_shape = nv_dec.GetFrameSize()
 
-            # Get address of the frame
-            base_addr = decoded_frame.GetPtrToPlane(0)
-            # Get frame size (bytes)
-            frame_size = decoded_frame.framesize()
+                # Get address of the frame
+                base_addr = decoded_frame.GetPtrToPlane(0)
+                # Get frame size (bytes)
+                frame_size = decoded_frame.framesize()
 
-            # Wrap the raw GPU pointer into a CuPy array without copying
-            # UnownedMemory lets CuPy use external GPU memory safely without managing its lifecycle
-            mem = cp.cuda.UnownedMemory(base_addr, frame_size, None)
-            memptr = cp.cuda.MemoryPointer(mem, 0)
-            gpu_frame = cp.ndarray(shape=frame_shape, dtype=cp.uint8, memptr=memptr)
+                # Wrap the raw GPU pointer into a CuPy array without copying
+                # UnownedMemory lets CuPy use external GPU memory safely without managing its lifecycle
+                mem = cp.cuda.UnownedMemory(base_addr, frame_size, None)
+                memptr = cp.cuda.MemoryPointer(mem, 0)
+                gpu_frame = cp.ndarray(shape=frame_shape, dtype=cp.uint8, memptr=memptr)
 
-            yield gpu_frame
+                yield gpu_frame
 
-            passed_frames += 1
+                passed_frames += 1
+        
+        # Stop after one full iteration if we want the entire video frames
+        if frame_count is None:
+            return
+        
+        # Otherwise, re-initialize demuxer and keep going
+        nv_dmx = nvc.CreateDemuxer(filename=input_path)
+
 
 
 
