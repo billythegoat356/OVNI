@@ -14,7 +14,7 @@ I coded this in 2 days so there is definitely room for improvement, speed wise a
 - CUDA driver & toolkit
 - Python > 3.11
 - requirements.txt (you can either build CuPy yourself or install a prebuilt version, but check your CUDA driver version for this)
-- Edit the Makefile to contain your GPU Cuda architecture, check [this](https://developer.nvidia.com/cuda-gpus)
+- Edit the Makefile to contain your GPU Cuda architecture, check [this](https://developer.nvidia.com/cuda-gpus), then run `make`
 - libass.c (only if you plan on using Advanced SubStation Alpha captions)
     
 # How to use? 
