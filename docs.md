@@ -164,6 +164,32 @@ with ASSRenderer("path/to/captions.ass", width, height) as ass:
 ```
 The `render_frame` mehod accepts a timestamp in milliseconds to know what part of the captions to render, aswell as a frame on which it blends the captions directly. 
 
+# CUDA context managing
+Each call to decode/encode requires a CUDA context to exist in the caller thread.   
+So you have to initialize it then kill it in your current thread.   
+```py
+from ovni.ctx import CudaCtxManager
+
+# Initialize context
+CudaCtxManager.init_ctx()
+
+# Decode/encode
+...
+
+# Now kill it
+CudaCtxManager.kill_ctx()
+```
+You can also use it as a pythonic context manager.   
+*This approach is preferred because it ensures that the context gets killed, even if an exception is raised.*
+```py
+with CudaCtxManager():
+    # Decode/encode
+    ...
+```
+You should only create one context per thread. It will be reused by the internal methods.
+
+For the main thread, OVNI is able to handle it automatically and register the kill at program exit, but explicit and controlled managing is recommended.
+
 
 # Take it further
 With these methods you can do pretty much everything you want.   
