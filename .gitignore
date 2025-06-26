@@ -5,3 +5,6 @@ dl/
 # Python
 .venv/
 **/__pycache__/
+
+# Tests
+test_*

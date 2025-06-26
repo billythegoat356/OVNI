@@ -109,6 +109,11 @@ class ASSRenderer:
         Exit the context manager
         Unloads the renderer
 
+        Parameters:
+            exc_type: Type[BaseException] | None,
+            exc_value: BaseException | None,
+            traceback: TracebackType | None
+
         Returns:
             Literal[False]
         """
