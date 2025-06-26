@@ -20,8 +20,11 @@ I coded this in 2 days so there is definitely room for improvement, speed wise a
 # How to use? 
 Check the [documentation](docs.md). Most of the animations you can think of can be done with those basics methods.   
 
+# Important
+In long-running single process applications there is a memory leak in the NVC SDK. Check [this issue](https://github.com/billythegoat356/OVNI/issues/1) for a patch.    
+If you still experience memory leaks either run the generation in a different process which ensures memory clean-up, or make an issue with the details.
+
 # Todo
-- Fix memory leak
 - Rewrite overlay/blend to take in X, Y, and overlay top left coords to bottom right. Allowing for general interpolation, meaning smoother specific animations.   
 - Make a custom object for frames, with attribute methods that operate directly on it and better typing support.
 
