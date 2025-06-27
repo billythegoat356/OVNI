@@ -6,7 +6,7 @@ import cupy as cp
 from ..kernels import Kernels, THREADS, make_blocks
 
 if TYPE_CHECKING:
-    from ..libass.lib import ASS_Image
+    from ..ass.lib import ASS_Image
 
 
 
