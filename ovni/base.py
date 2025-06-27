@@ -28,6 +28,9 @@ def demux_and_decode(input_path: str, frame_count: int | None = None) -> Generat
         Generator[cp.ndarray, None, None]
     """
 
+    if frame_count == 0:
+        return
+
     # Get context
     cuda_ctx = CudaCtxManager.get_ctx()
 
@@ -73,9 +76,6 @@ def demux_and_decode(input_path: str, frame_count: int | None = None) -> Generat
 
             # Decode packet and iterate over frames
             for decoded_frame in nv_dec.Decode(packet):
-
-                if passed_frames == frame_count:
-                    return
                 
                 # 'decoded_frame' contains list of views implementing cuda array interface
                 # For nv12, it would contain 2 views for each plane and two planes would be contiguous 
@@ -98,6 +98,10 @@ def demux_and_decode(input_path: str, frame_count: int | None = None) -> Generat
                 yield gpu_frame
 
                 passed_frames += 1
+
+                # Stop when reached frame count
+                if passed_frames == frame_count:
+                    return
         
         # Stop after one full iteration if we want the entire video frames
         if frame_count is None:
