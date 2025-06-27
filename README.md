@@ -22,7 +22,7 @@ Check the [documentation](docs.md). Most of the animations you can think of can 
 
 # Important
 In long-running single process applications there is a memory leak in the NVC SDK. Check [this issue](https://github.com/billythegoat356/OVNI/issues/1) for a patch.    
-If you still experience memory leaks either run the generation in a different process which ensures memory clean-up, or make an issue with the details.
+If you still experience memory leaks either run the generation in a different process (e.g., using `multiprocessing`) which ensures memory clean-up, or make an issue with the details.
 
 # Todo
 - Rewrite overlay/blend to take in X, Y, and overlay top left coords to bottom right. Allowing for general interpolation, meaning smoother specific animations.   
