@@ -277,8 +277,8 @@ def mux(h264_stream: Iterable[bytes], output_path: str, audio_path: str | None =
     ffmpeg_process = subprocess.Popen(
         ffmpeg_cmd,
         stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
     )
     pipe = ffmpeg_process.stdin
 
