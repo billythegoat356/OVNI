@@ -18,6 +18,24 @@ ASS_Image._fields_ = [
 ]
 
 
+# Function type to pass to the callback method
+ASS_MessageCallback = ctypes.CFUNCTYPE(
+    None, # Returns void
+    
+    ctypes.c_int,      # Level
+    ctypes.c_char_p,     # Format
+    ctypes.c_void_p, # Some stuff
+    ctypes.c_void_p     # Data that we passed ourselves
+)
+
+def _silent_cb_func(*args, **kwargs) -> None:
+    """Method to pass to the ass lib to suppress callback"""
+    return None
+
+# Load the function
+silent_cb_func = ASS_MessageCallback(_silent_cb_func)
+
+
 
 class LibASS:
     obj = None # Loaded object
@@ -42,12 +60,19 @@ class LibASS:
         Returns:
             None
         """
-        # Load library
+
+        if cls.is_loaded():
+            return
+
+        # Load object & set types
         cls.obj = ctypes.CDLL('libass.so')
         cls.set_types()
 
         # We can now load the library
         cls.library = cls.obj.ass_library_init()
+
+        # Suppress logs
+        cls.obj.ass_set_message_cb(cls.library, silent_cb_func, None)
 
         # Register the unload at exit
         atexit.register(cls.unload)
@@ -61,9 +86,12 @@ class LibASS:
         Returns:
             None
         """
-        if cls.library is not None:
-            cls.obj.ass_library_done(cls.library)
-            cls.library = None
+
+        if not cls.is_loaded():
+            return
+
+        cls.obj.ass_library_done(cls.library)
+        cls.library = None
 
 
     @classmethod
@@ -128,3 +156,10 @@ class LibASS:
         cls.obj.ass_render_frame.restype = ctypes.POINTER(ASS_Image) # Pointer to ASS_Image - this one needs a definition because we access its attributes later on
 
         
+        # Logger callback setter method
+        cls.obj.ass_set_message_cb.argtypes = [
+            ctypes.c_void_p,     # Pointer to ASS_Library
+            ASS_MessageCallback, # Pointer to callback function
+            ctypes.c_void_p      # Additional data passed to callback
+        ]
+        cls.obj.ass_set_message_cb.restype = None # Void
