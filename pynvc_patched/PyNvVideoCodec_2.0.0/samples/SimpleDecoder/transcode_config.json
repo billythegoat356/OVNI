@@ -1,0 +1,6 @@
+{
+    "codec" : "h264",
+    "preset" : "P3",
+    "tuning_info" : "high_quality",
+    "bf" : "3"
+}

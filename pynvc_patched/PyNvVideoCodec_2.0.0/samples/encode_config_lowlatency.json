@@ -1,0 +1,11 @@
+{
+  "preset": "P3",
+  "tuning_info": "low_latency",
+  "rc": "cbr",
+  "fps": 30,
+  "bf": 1,
+  "multipass":"fullres",
+  "bitrate": 3000000,
+  "maxbitrate": 3000000,
+  "vbvbufsize": 100000
+}

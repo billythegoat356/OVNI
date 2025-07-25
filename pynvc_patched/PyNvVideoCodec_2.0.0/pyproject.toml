@@ -1,0 +1,64 @@
+[build-system]        
+requires = [
+  "setuptools>=42",
+  "scikit-build",
+  "numpy",
+  "ninja; platform_system!='Windows'"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "PyNvVideoCodec"
+version = "2.0.0"
+license = {text = "MIT"}
+description = "PyNvVideoCodec is NVIDIA's Python based video codec library for hardware accelerated video encode and decode on NVIDIA GPUs."
+authors = [{name = "NVIDIA"}]
+maintainers = [
+    {name = "nvidia"},
+]
+requires-python = ">=3.8"
+readme = "README.md"
+classifiers = [
+    'License :: OSI Approved :: MIT License',
+]
+
+[tool.cibuildwheel]
+before-all = "uname -a"
+skip = ["*-win32", "*-musllinux*","*-manylinux_i686","cp36-*", "cp37-*","cp39-*","pp*"]
+archs = ["auto"]
+build-frontend = "default"
+config-settings = {}
+dependency-versions = "pinned"
+environment-pass = []
+build-verbosity = 1
+
+environment = { CC = "/opt/rh/gcc-toolset-11/root/usr/bin/gcc", CXX = "/opt/rh/gcc-toolset-11/root/usr/bin/g++", PATH = "/opt/rh/gcc-toolset-11/root/usr/bin:$PATH",LD_LIBRARY_PATH = "/opt/rh/gcc-toolset-11/root/usr/lib64:/opt/rh/gcc-toolset-11/root/usr/lib:$LD_LIBRARY_PATH"}
+
+test-command = ""
+before-test = ""
+test-requires = []
+test-extras = []
+
+manylinux-x86_64-image = "sameli/manylinux_2_28_x86_64_cuda_12.3"
+container-engine = { name = "docker", create-args = ["--net","host","-v","/$(pwd)/:/pynvc"]}
+
+[tool.cibuildwheel.linux]
+before-all = [
+"ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/lib64/libcuda.so.1",
+"export LD_LIBRARY_PATH=/usr/lib64:$LD_LIBRARY_PATH",
+"dnf install -y gcc-toolset-11",
+"ln -s /opt/rh/gcc-toolset-11/root/usr/bin/gcc /usr/local/cuda/bin/gcc",
+"ln -s /opt/rh/gcc-toolset-11/root/usr/bin/g++ /usr/local/cuda/bin/g++"
+]
+before-build = [
+"yum clean packages",
+" yum groupinstall 'Development Tools' -y",
+" yum update -y",
+" yum install openssl-devel libffi-devel libffi-devel bzip2-devel -y",
+" yum install -y python3-devel",
+]
+repair-wheel-command = "auditwheel repair --lib-sdir . -w {dest_dir} {wheel}"
+
+[project.urls]
+documentation = "https://docs.nvidia.com/video-technologies/pynvvideocodec/index.html"
+source = "https://catalog.ngc.nvidia.com/orgs/nvidia/resources/pynvvideocodec"

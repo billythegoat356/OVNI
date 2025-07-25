@@ -1,0 +1,9 @@
+{
+    "preset" : "p3",
+    "tuning_info" : "high_quality",
+    "rc": "vbr",
+    "fps"  : 30,
+    "bitrate" : "10000000",
+    "maxbitrate" : "10000000",
+    "vbvbufsize" : "10000000"
+}

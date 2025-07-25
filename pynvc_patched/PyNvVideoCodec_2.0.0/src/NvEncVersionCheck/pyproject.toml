@@ -1,0 +1,13 @@
+[build-system]
+requires = [
+    "setuptools>=42",
+    "pybind11>=2.10.0",
+    "wheel"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "Driver_Wrapper"
+version = "0.1.0"
+description = "Driver_Wrapper with version-specific DLL/so loading"
+requires-python = ">=3.7"

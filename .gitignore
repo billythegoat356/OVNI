@@ -1,10 +1,11 @@
-# Utils folders
-videos/
-dl/
-
 # Python
 .venv/
 **/__pycache__/
+**/*.egg-info/
+
+# Build directory in patched PyNVC
+pynvc_patched/PyNvVideoCodec_2.0.0/build/
 
 # Tests
-test_*
+tests/
+

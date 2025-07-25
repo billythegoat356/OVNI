@@ -1,6 +1,0 @@
-numpy==2.2.6
-cupy-cuda12x==13.4.1 # Or whatever your version of CUDA toolkit is, check with `nvcc --version`
-pycuda==2025.1.1
-PyNvVideoCodec==2.0.1
-pillow==11.2.1
-opencv-python==4.11.0.86

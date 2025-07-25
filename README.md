@@ -13,16 +13,87 @@ I coded this in 2 days so there is definitely room for improvement, speed wise a
 - A Nvidia graphics card
 - CUDA driver & toolkit
 - Python > 3.11
-- requirements.txt (you can either build CuPy yourself or install a prebuilt version, but check your CUDA driver version for this)
-- Edit the Makefile to contain your GPU Cuda architecture, check [this](https://developer.nvidia.com/cuda-gpus), then run `make`
-- libass.c (only if you plan on using Advanced SubStation Alpha captions)
+- [optional] LibASS, only if you plan on using Advanced SubStation Alpha captions
     
+# Setup guide
+This guide assumes you have already installed the requirements.   
+   
+First create a Python3.11 virtual env. (you can skip this step but it is highly recommended)
+```sh
+python3.11 -m venv .venv
+
+# Activate it
+source .venv/bin/activate
+```
+
+Then install the package locally.
+```sh
+pip install .
+```
+
+Now we need to install cupy.   
+You can compile it locally, but I recommend installing a precompiled version for your CUDA toolkit version.   
+
+Check CUDA toolkit version
+```sh
+nvcc --version
+# nvcc: NVIDIA (R) Cuda compiler driver
+# Copyright (c) 2005-2025 NVIDIA Corporation
+# Built on Fri_Feb_21_20:23:50_PST_2025
+# Cuda compilation tools, release 12.8, V12.8.93
+# Build cuda_12.8.r12.8/compiler.35583870_0
+```
+
+Our version is `12.8`. So we install `cupy-cuda12x`.
+```sh
+pip install cupy-cuda12x
+```
+
+Now, check your CUDA arch [here](https://developer.nvidia.com/cuda-gpus).
+Say your arch is `compute_89`, run the following command:
+```sh
+make CUDA_ARCH=compute_89
+```
+
+## Optional
+*In long-running single process applications there are several memory leaks in the NVC SDK.*   
+*I've patched their SDK, check [this issue](https://github.com/billythegoat356/OVNI/issues/1) for detailed information.*
+*Otherwise, follow these simple steps to recompile it locally with the fixes.*   
+
+Compile it
+```sh
+cd pynvc_patched/PyNvVideoCodec_2.0.0
+mkdir build
+cd build
+cmake ..
+make -j $(nproc)
+```
+
+Check your NVIDIA driver version to know if you need the version 13.0 or 12.1 of the SDK (other versions aren't implemented in PyNVC).   
+```sh
+nvidia-smi
+# +-----------------------------------------------------------------------------------------+
+# | NVIDIA-SMI 575.64.03...
+```
+If your driver version is >= 570, you need 13.0.   
+If your driver version is >= 530 , you need 12.1.   
+You also need CUDA toolkit >= 11 for both (the one previously checked when installing cupy).   
+
+*Other versions aren't supported.*   
+
+Now, move the compiled file to your PyNvVideoCodec installation.   
+Note that the path may vary depending on your SDK version, python version and CPU architecture.
+```sh
+mv src/PyNvVideoCodec/PyNvVideoCodec_130.cpython-311-x86_64-linux-gnu.so ../../../.venv/lib/python3.11/site-packages/PyNvVideoCodec
+```
+
 # How to use? 
 Check the [documentation](docs.md). Most of the animations you can think of can be done with those basics methods.   
 
 # Important
-In long-running single process applications there is a memory leak in the NVC SDK. Check [this issue](https://github.com/billythegoat356/OVNI/issues/1) for a patch.    
-If you still experience memory leaks either run the generation in a different process (e.g., using `multiprocessing`) which ensures memory clean-up, or make an issue with the details.
+There are several memory leaks in the NVC SDK used for decoding/encoding.   
+I've fixed them but memory may occasionally leak in long-running single process applications.   
+So if you're planning on using OVNI in production, it is highly recommended to run the generation in a different process (e.g., using `multiprocessing`) which ensures memory clean-up.   
 
 # Todo
 - Rewrite overlay/blend to take in X, Y, and overlay top left coords to bottom right. Allowing for general interpolation, meaning smoother specific animations.   

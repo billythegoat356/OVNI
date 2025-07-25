@@ -1,0 +1,9 @@
+graft external
+prune external/ffmpeg/lib
+prune external/ffmpeg/include
+graft samples
+graft benchmarks
+
+
+
+
