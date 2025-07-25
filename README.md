@@ -17,7 +17,9 @@ I coded this in 2 days so there is definitely room for improvement, speed wise a
     
 # Setup guide
 This guide assumes you have already installed the requirements.   
-   
+
+### Install python requirements
+
 First create a Python3.11 virtual env. (you can skip this step but it is highly recommended)
 ```sh
 python3.11 -m venv .venv
@@ -49,18 +51,19 @@ Our version is `12.8`. So we install `cupy-cuda12x`.
 pip install cupy-cuda12x
 ```
 
-Now, check your CUDA arch [here](https://developer.nvidia.com/cuda-gpus).
+### Compile CUDA kernels
+Now, check your CUDA arch [here](https://developer.nvidia.com/cuda-gpus).   
 Say your arch is `compute_89`, run the following command:
 ```sh
 make CUDA_ARCH=compute_89
 ```
 
-## Optional
+### [optional] Fix memory leak in Nvidia Video Codec SDK
 *In long-running single process applications there are several memory leaks in the NVC SDK.*   
-*I've patched their SDK, check [this issue](https://github.com/billythegoat356/OVNI/issues/1) for detailed information.*
+*I've patched their SDK, check [this issue](https://github.com/billythegoat356/OVNI/issues/1) for detailed information.*   
 *Otherwise, follow these simple steps to recompile it locally with the fixes.*   
 
-Compile it
+Compile the patched version of PyNVC
 ```sh
 cd pynvc_patched/PyNvVideoCodec_2.0.0
 mkdir build
@@ -69,7 +72,8 @@ cmake ..
 make -j $(nproc)
 ```
 
-Check your NVIDIA driver version to know if you need the version 13.0 or 12.1 of the SDK (other versions aren't implemented in PyNVC).   
+Check your NVIDIA driver version to know if you need the version 13.0 or 12.1 of the SDK.   
+*(other versions aren't implemented in PyNVC)*   
 ```sh
 nvidia-smi
 # +-----------------------------------------------------------------------------------------+
