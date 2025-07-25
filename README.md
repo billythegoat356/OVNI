@@ -103,6 +103,7 @@ So if you're planning on using OVNI in production, it is highly recommended to r
 # Todo
 - Rewrite overlay/blend to take in X, Y, and overlay top left coords to bottom right. Allowing for general interpolation, meaning smoother specific animations.   
 - Make a custom object for frames, with attribute methods that operate directly on it and better typing support.
+- Make an object for video timelines (sequencial operations on frames, just a algorithmic wrapper)
 
 # Benchmarks
 On my RTX 4080 Super, I achieve a speed of around **720 frames per second** without any operations on the frames, when decoding and encoding directly *with preset 3*.   
