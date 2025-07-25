@@ -14,7 +14,7 @@ from .ctx import CudaCtxManager
 
 
 
-def demux_and_decode(input_path: str, frame_count: int | None = None) -> Generator[cp.ndarray, None, None]:
+def demux_and_decode(input_path: str, frame_count: int | None = None, start_frame: int = 0) -> Generator[cp.ndarray, None, None]:
     """
     Decodes raw frames from the input path using NVC, and returns them in a generator of CuPy arrays
     -----------
@@ -23,6 +23,7 @@ def demux_and_decode(input_path: str, frame_count: int | None = None) -> Generat
     Parameters:
         input_path: str
         frame_count: int | None = None - the number of frames to yield, None means unlimited
+        start_frame: int = 0 - the number of the frame to start yielding from, default is 0 (from the beginning)
 
     Returns:
         Generator[cp.ndarray, None, None]
@@ -76,6 +77,10 @@ def demux_and_decode(input_path: str, frame_count: int | None = None) -> Generat
 
             # Decode packet and iterate over frames
             for decoded_frame in nv_dec.Decode(packet):
+
+                if start_frame > 0:
+                    start_frame -= 1
+                    continue
                 
                 # 'decoded_frame' contains list of views implementing cuda array interface
                 # For nv12, it would contain 2 views for each plane and two planes would be contiguous 
