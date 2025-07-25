@@ -93,6 +93,7 @@ mv src/PyNvVideoCodec/PyNvVideoCodec_130.cpython-311-x86_64-linux-gnu.so ../../.
 
 # How to use? 
 Check the [documentation](docs.md). Most of the animations you can think of can be done with those basics methods.   
+You can also check out some basic [examples](examples/scripts).   
 
 # Important
 There are several memory leaks in the NVC SDK used for decoding/encoding.   

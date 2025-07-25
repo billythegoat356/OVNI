@@ -6,6 +6,8 @@
 # Build directory in patched PyNVC
 pynvc_patched/PyNvVideoCodec_2.0.0/build/
 
-# Tests
+# Tests (local)
 tests/
 
+# Output from examples
+examples/media/out.mp4
