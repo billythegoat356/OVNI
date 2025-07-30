@@ -16,11 +16,18 @@ I coded this in 2 days so there is definitely room for improvement, speed wise a
 - [optional] LibASS, only if you plan on using Advanced SubStation Alpha captions
     
 # Setup guide
-This guide assumes you have already installed the requirements.   
+This guide assumes you have already installed the requirements mentioned above.   
+
+### Compile CUDA kernels
+First, check your CUDA arch [here](https://developer.nvidia.com/cuda-gpus).   
+Say your arch is `compute_89`, run the following command:
+```sh
+make CUDA_ARCH=compute_89
+```
 
 ### Install python requirements
 
-First create a Python3.11 virtual env. (you can skip this step but it is highly recommended)
+Create a Python3.11 virtual env. (you can skip this step but it is highly recommended)
 ```sh
 python3.11 -m venv .venv
 
@@ -49,13 +56,6 @@ nvcc --version
 Our version is `12.8`. So we install `cupy-cuda12x`.
 ```sh
 pip install cupy-cuda12x
-```
-
-### Compile CUDA kernels
-Now, check your CUDA arch [here](https://developer.nvidia.com/cuda-gpus).   
-Say your arch is `compute_89`, run the following command:
-```sh
-make CUDA_ARCH=compute_89
 ```
 
 ### [optional] Fix memory leak in Nvidia Video Codec SDK
