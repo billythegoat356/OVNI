@@ -120,19 +120,27 @@ def demux_and_decode(input_path: str, frame_count: int | None = None, start_fram
 
 
 
-def load_image(path: str, gpu: bool = True) -> cp.ndarray:
+def load_image(path: str, gpu: bool = True, preserve_alpha: bool = True) -> cp.ndarray:
     """
     Loads an image from a path inside a cupy RGB(A) array
 
     Parameters:
         path: str
         gpu: bool = True - whether to load the array on the GPU. If you want to do some one-time processing, you may want it on the CPU.
+        preserve_alpha: bool = True - whether to preserve the alpha channel of the image, useful if you manipulate transparent images
 
     Returns:
         cp.ndarray
     """
     # Load image with OpenCV (BGR format)
-    img_bgr = cv2.imread(path, cv2.IMREAD_UNCHANGED)
+    if preserve_alpha:
+        # Loads with original channels
+        flag = cv2.IMREAD_UNCHANGED
+    else:
+        # Loads in BGR
+        flag = cv2.IMREAD_COLOR
+
+    img_bgr = cv2.imread(path, flag)
     if img_bgr is None:
         raise FileNotFoundError(f"Image not found at path: {path}")
 
@@ -141,7 +149,7 @@ def load_image(path: str, gpu: bool = True) -> cp.ndarray:
         img_bgr = cp.asarray(img_bgr)
 
     # Reorder to RGB
-    if img_bgr.shape[2] == 4: # Contains alpha channel!
+    if img_bgr.shape[2] == 4: # Contains alpha channel
         img_rgb = img_bgr[..., [2, 1, 0, 3]]
     else:
         img_rgb = img_bgr[..., [2, 1, 0]]

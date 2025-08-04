@@ -147,7 +147,12 @@ When you **increase** `opacity_t`, pixels will need to be **further away** from 
 When you **decrease** it, **more** pixels **close** to the key color will be **fully opaque**.   
 *If you decrease it too much, sharp edges may appear next to the key color.*   
 
-Depending on your frame's coloring, you may want to play around with these values until it looks good. 
+Depending on your frame's coloring, you may want to play around with these values until it looks good.   
+
+## Note
+
+By design, these filters *will not work* on RGBA arrays (4 channels).   
+
 
 # Captions
 OVNI lets you overlay captions on videos with [LibASS](https://github.com/libass/libass).   
