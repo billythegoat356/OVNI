@@ -1,6 +1,10 @@
 import subprocess
 import json
 from fractions import Fraction
+from typing import Generator, Iterable
+
+import cupy as cp
+
 
 
 def get_video_resolution(path: str) -> tuple[int, int]:
@@ -141,3 +145,30 @@ def get_video_duration(path: str) -> float:
     duration = float(data["duration"])
 
     return duration
+
+
+
+def resample_frames(frames: Iterable[cp.ndarray], src_fps: int, dst_fps: int) -> Generator[cp.ndarray, None, None]:
+    """
+    Resamples an iterable of frames to match a specific framerate
+    No interpolation is done, frames are either duplicated or dropped!
+    
+    Parameters:
+        frames: Iterable[cp.ndarray]
+        src_fps: int - the original framerate of the frames (to take for reference for 1 second)
+        dst_fps: int - the desired output framerate
+
+    Returns:
+        Generator[cp.ndarray, None, None] - a generator of resampled frames
+    """
+
+    fps_ratio = dst_fps / src_fps
+    accumulator = 0
+    
+    for frame in frames:
+        accumulator += fps_ratio
+
+        while accumulator >= 1:
+            yield frame
+            accumulator -= 1
+        
