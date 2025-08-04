@@ -13,3 +13,6 @@ tests/
 
 # Output from examples
 examples/media/out.mp4
+
+# Etc
+**/*.DS_Store
