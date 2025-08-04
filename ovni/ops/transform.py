@@ -145,20 +145,21 @@ def resize(src: cp.ndarray, dst_width: int, dst_height: int) -> cp.ndarray:
 
 
 
-def crop(src: cp.ndarray, left: int | float, right: int | float, top: int | float, bottom: int | float) -> cp.ndarray:
+def crop(src: cp.ndarray, left: int | float, top: int | float, right: int | float, bottom: int | float) -> cp.ndarray:
     """
     Crop the array in a specific box
     NOTE: This does not use a custom kernel, it just slices the array. We define it this way for abstraction.
 
     Left and top are included, right and bottom are excluded.
 
-    Coordinates may be floats, this would allow bilinear interpolation
+    Coordinates may be floats, this would enable bilinear interpolation
 
     Parameters:
         src: cp.ndarray
+
         left: int | float
-        right: int | float
         top: int | float
+        right: int | float
         bottom: int | float
 
     Returns:
@@ -177,7 +178,7 @@ def crop(src: cp.ndarray, left: int | float, right: int | float, top: int | floa
     
     else:
         # Otherwise use translation
-        return translate(src, -left, -top, round(width), round(height))
+        return translate(src, -left, -top, round(width), round(height)) # Rounding because of floating-point precision errors
 
 
 
@@ -215,7 +216,7 @@ def overlay(src: cp.ndarray, overlay_arr: cp.ndarray, x: int | float, y: int | f
     # Clip overlay to fit in the coords
     overlay_w = right_x - left_x
     overlay_h = bottom_y - top_y
-    clipped_overlay = crop(overlay_arr, 0, overlay_w, 0, overlay_h)
+    clipped_overlay = crop(overlay_arr, 0, 0, overlay_w, overlay_h)
 
     if x != int(x) or y != int(y):
         # Floats passed, requires interpolation
@@ -223,7 +224,7 @@ def overlay(src: cp.ndarray, overlay_arr: cp.ndarray, x: int | float, y: int | f
         y_distance = y - int(y)
 
         # Clip the source for the area containing the 4 positions of the overlay
-        clipped_src = crop(src, left_x, min(width, right_x+1), top_y, min(height, bottom_y+1))
+        clipped_src = crop(src, left_x, top_y, min(width, right_x+1), min(height, bottom_y+1))
 
         if x != int(x) and y != int(y):
             # Requires interpolation on both axis
@@ -334,7 +335,7 @@ def blend(src: cp.ndarray, overlay_arr: cp.ndarray, x: int | float, y: int | flo
     # Clip overlay to fit in the coords
     overlay_w = right_x - left_x
     overlay_h = bottom_y - top_y
-    clipped_overlay = crop(overlay_arr, 0, overlay_w, 0, overlay_h)
+    clipped_overlay = crop(overlay_arr, 0, 0, overlay_w, overlay_h)
 
     if x != int(x) or y != int(y):
         # Floats passed, requires interpolation
@@ -342,7 +343,7 @@ def blend(src: cp.ndarray, overlay_arr: cp.ndarray, x: int | float, y: int | flo
         y_distance = y - int(y)
 
         # Clip the source for the area containing the 4 positions of the overlay
-        clipped_src = crop(src, left_x, min(width, right_x+1), top_y, min(height, bottom_y+1))
+        clipped_src = crop(src, left_x, top_y, min(width, right_x+1), min(height, bottom_y+1))
 
         if x != int(x) and y != int(y):
             # Requires interpolation on both axis

@@ -73,9 +73,9 @@ from ovni.ops import *
 
 ## Crop
 The following would crop a frame from (0, 200) to (100, 300).   
-Note that we pass them like this: `left`, `right`, `top`, `bottom`.
+Note that we pass them like this: `left`, `top`, `right`, `bottom`.
 ```py
-frame = crop(frame, 0, 100, 200, 300)
+frame = crop(frame, 0, 200, 100, 300)
 ```
 
 ## Resize
