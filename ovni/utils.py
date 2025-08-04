@@ -148,15 +148,15 @@ def get_video_duration(path: str) -> float:
 
 
 
-def resample_frames(frames: Iterable[cp.ndarray], src_fps: int, dst_fps: int) -> Generator[cp.ndarray, None, None]:
+def resample_frames(frames: Iterable[cp.ndarray], src_fps: float, dst_fps: float) -> Generator[cp.ndarray, None, None]:
     """
     Resamples an iterable of frames to match a specific framerate
     No interpolation is done, frames are either duplicated or dropped!
     
     Parameters:
         frames: Iterable[cp.ndarray]
-        src_fps: int - the original framerate of the frames (to take for reference for 1 second)
-        dst_fps: int - the desired output framerate
+        src_fps: float - the original framerate of the frames (to take for reference for 1 second)
+        dst_fps: float - the desired output framerate
 
     Returns:
         Generator[cp.ndarray, None, None] - a generator of resampled frames

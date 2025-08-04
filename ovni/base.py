@@ -170,7 +170,7 @@ class FrameWrapper:
     
 
 
-def encode(frames: Iterable[cp.ndarray], width: int, height: int, fps: int, bitrate: str = BITRATE, preset: str = PRESET) -> Generator[bytes, None, None]:
+def encode(frames: Iterable[cp.ndarray], width: int, height: int, fps: float, bitrate: str = BITRATE, preset: str = PRESET) -> Generator[bytes, None, None]:
     """
     Takes an iterable of CuPy arrays, and encodes them into a H264 bytestream
     -----------
@@ -180,7 +180,7 @@ def encode(frames: Iterable[cp.ndarray], width: int, height: int, fps: int, bitr
         frames: Iterable[cp.ndarray]
         width: int
         height: int
-        fps: int
+        fps: float
         bitrate: str = BITRATE
         preset: str = PRESET
 

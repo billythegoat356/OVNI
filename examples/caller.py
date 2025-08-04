@@ -9,14 +9,14 @@ import time
 
 
 
-def call(func: Callable[[], None], frames: int, fps: int):
+def call(func: Callable[[], None], frames: int, fps: float):
     """
     Wraps the function in a Cuda context manager, and times the execution
 
     Parameters:
         func: Callable[[], None] - the function to call
         frames: int - amount of frames (for logging)
-        fps: int - same for fps
+        fps: float - same for fps
     """
     start = time.time()
 
