@@ -54,7 +54,7 @@ def get_video_framerate(path: str) -> float:
         "ffprobe", "-v", "error",
         "-select_streams", "v:0",
         "-show_entries",
-        "stream=r_frame_rate",
+        "stream=avg_frame_rate",
         "-of", "json",
         path
     ]
@@ -69,7 +69,7 @@ def get_video_framerate(path: str) -> float:
     data = json.loads(result.stdout)['streams'][0]
 
     # Convert to float from potential fraction
-    framerate = float(Fraction(data["r_frame_rate"]))
+    framerate = float(Fraction(data["avg_frame_rate"]))
 
     return framerate
 
