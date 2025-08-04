@@ -5,6 +5,7 @@ import subprocess
 import pycuda.driver as cuda
 import PyNvVideoCodec as nvc
 import cupy as cp
+import numpy as np
 import cv2
 
 from .config import GPU_ID, CODEC, PRESET, BITRATE
@@ -120,21 +121,21 @@ def demux_and_decode(input_path: str, frame_count: int | None = None, start_fram
 
 
 
-def load_image(path: str, gpu: bool = True, preserve_alpha: bool = True) -> cp.ndarray:
+def load_image(path: str, gpu: bool = True, preserve_alpha: bool = True) -> cp.ndarray | np.ndarray:
     """
-    Loads an image from a path inside a cupy RGB(A) array
+    Loads an image from a path inside a cupy/numpy RGB(A) array
 
     Parameters:
         path: str
-        gpu: bool = True - whether to load the array on the GPU. If you want to do some one-time processing, you may want it on the CPU.
+        gpu: bool = True - whether to load the array on the GPU (cupy). If you want to do some one-time processing, you may want it on the CPU (numpy)
         preserve_alpha: bool = True - whether to preserve the alpha channel of the image, useful if you manipulate transparent images
 
     Returns:
-        cp.ndarray
+        cp.ndarray | np.ndarray - a cupy array if `gpu=True`, otherwise a numpy array
     """
     # Load image with OpenCV (BGR format)
     if preserve_alpha:
-        # Loads with original channels
+        # Loads with alpha (if present)
         flag = cv2.IMREAD_UNCHANGED
     else:
         # Loads in BGR
