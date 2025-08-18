@@ -23,7 +23,7 @@ def demux_and_decode(input_path: str, frame_count: int | None = None, start_fram
 
     Parameters:
         input_path: str
-        frame_count: int | None = None - the number of frames to yield, None means unlimited
+        frame_count: int | None = None - the number of frames to yield, None means one full iteration
         start_frame: int = 0 - the number of the frame to start yielding from, default is 0 (from the beginning)
 
     Returns:
