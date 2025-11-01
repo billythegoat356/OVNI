@@ -11,6 +11,7 @@ I coded this in 2 days so there is definitely room for improvement, speed wise a
 
 # Requirements
 - A Nvidia graphics card
+- FFmpeg
 - CUDA driver & toolkit
 - Python > 3.11
 - [optional] LibASS, only if you plan on using Advanced SubStation Alpha captions
