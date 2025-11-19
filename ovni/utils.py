@@ -7,9 +7,9 @@ import cupy as cp
 
 
 
-def get_video_resolution(path: str) -> tuple[int, int]:
+def get_video_dimensions(path: str) -> tuple[int, int]:
     """
-    Uses ffprobe to get the resolution of the video at the given path
+    Uses ffprobe to get the dimensions of the video at the given path
 
     Parameters:
         path: str

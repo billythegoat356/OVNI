@@ -11,6 +11,7 @@ def scale_translate(src: cp.ndarray, scale: float, tx: float, ty: float, dst_wid
     """
     Applies scale and translation to an image.
     Uses bilinear interpolation
+    NOTE: The scale is applied first, then the translation
 
     Parameters:
         src: cp.ndarray (H x W x 3), dtype=uint8

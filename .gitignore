@@ -16,3 +16,6 @@ examples/media/out.mp4
 
 # Etc
 **/*.DS_Store
+
+# Locally compiled kernels
+ovni/kernels/compiled/all_kernels.ptx
