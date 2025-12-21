@@ -29,6 +29,9 @@ class Kernels:
     chroma_key = mod.get_function("chroma_key")
     round_corners = mod.get_function("round_corners")
     
-
     # Libass
     blend_ass_image = mod.get_function("blend_ass_image")
+
+    # Gaussian blur
+    gb_horizontal = mod.get_function("gb_horizontal")
+    gb_vertical = mod.get_function("gb_vertical")
