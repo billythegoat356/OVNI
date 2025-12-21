@@ -1,6 +1,7 @@
 import cupy as cp
 
-from .filter import round_mask, gaussian_blur
+from .filter import round_mask
+from .blur import gaussian_blur
 
 
 
@@ -64,7 +65,7 @@ def make_shadow(
     pad = blur*2 # Heuristic
 
     # Create a temp shape just to round the corners
-    shape = cp.full((height, width, 1), 255, dtype=cp.uint8)
+    shape = cp.full((height, width, 1), alpha, dtype=cp.uint8)
     round_mask(shape, corner_radius)
 
     # Create padded shape & overlay the rounded temp shape's
@@ -82,6 +83,6 @@ def make_shadow(
     final_image[..., 1] = color[1]  # G
     final_image[..., 2] = color[2]  # B
 
-    final_image[..., 3:4] = padded_shape * (alpha / 255)  # A
+    final_image[..., 3:4] = padded_shape 
 
     return final_image

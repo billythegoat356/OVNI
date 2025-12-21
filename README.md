@@ -102,6 +102,7 @@ I've fixed them but memory may occasionally leak in long-running single process 
 So if you're planning on using OVNI in production, it is highly recommended to run the generation in a different process (e.g., using `multiprocessing`) which ensures memory clean-up.   
 
 # Todo
+- Rewrite a bunch of kernels for per channel operations allowing for consistent RGB/RGBA support
 - Rewrite overlay/blend to take in X, Y, and overlay top left coords to bottom right. Allowing for general interpolation, meaning smoother specific animations.   
 - Make a custom object for frames, with attribute methods that operate directly on it and better typing support.
 - Make an object for video timelines (sequencial operations on frames, just a algorithmic wrapper)

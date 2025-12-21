@@ -33,5 +33,5 @@ class Kernels:
     blend_ass_image = mod.get_function("blend_ass_image")
 
     # Gaussian blur
-    gb_horizontal = mod.get_function("gb_horizontal")
-    gb_vertical = mod.get_function("gb_vertical")
+    gaussian_blur_horizontal = mod.get_function("gaussian_blur_horizontal")
+    gaussian_blur_vertical = mod.get_function("gaussian_blur_vertical")

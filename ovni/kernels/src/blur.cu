@@ -1,7 +1,7 @@
 
 
 extern "C" __global__
-void gb_horizontal(
+void gaussian_blur_horizontal(
     unsigned char* src,
     unsigned char* dst,
     float* weights,
@@ -32,7 +32,7 @@ void gb_horizontal(
 
 
 extern "C" __global__
-void gb_vertical(
+void gaussian_blur_vertical(
     unsigned char* src,
     unsigned char* dst,
     float* weights,
