@@ -66,7 +66,9 @@ def make_shadow(
 
     # Create a temp shape just to round the corners
     shape = cp.full((height, width, 1), alpha, dtype=cp.uint8)
-    round_mask(shape, corner_radius)
+
+    if corner_radius > 0:
+        round_mask(shape, corner_radius)
 
     # Create padded shape & overlay the rounded temp shape's
     # We only operate on the alpha channel
