@@ -320,6 +320,11 @@ def blend(src: cp.ndarray, overlay_arr: cp.ndarray, x: int | float, y: int | flo
         None
     """
 
+    if overlay_arr.shape[2] == 3:
+        # For simplicity
+
+        return overlay(src, overlay_arr, x, y)
+
     width = src.shape[1]
     height = src.shape[0]
 
