@@ -37,7 +37,7 @@ def rounded_image():
 
         for i in range(FRAMES):
             this_bg_frame = bg_frame.copy()
-            nframe = round_corners(frame, i)
+            nframe = round_corners(frame, [i, i, i, i])
             blend(this_bg_frame, nframe, X, Y)
             yield this_bg_frame
 

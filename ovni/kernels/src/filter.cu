@@ -37,9 +37,12 @@ void chroma_key(
 
 
 extern "C" __global__
-void round_corners(
-    unsigned char* src,
-    int radius,
+void round_mask(
+    unsigned char* dst,
+    int radius_top_left,
+    int radius_top_right,
+    int radius_bottom_right,
+    int radius_bottom_left,
     int width,
     int height
 ) {
@@ -48,48 +51,65 @@ void round_corners(
 
     if (x >= width || y >= height) return;
 
-    int index = (y * width + x) * 4;
+    int index = (y * width + x);
 
-    int alpha = 255;
 
     float dx = 0.0f;
     float dy = 0.0f;
 
+    unsigned char alpha;
+
     // top-left
-    if (x < radius && y < radius) {
-        dx = (radius - 1) - x;
-        dy = (radius - 1) - y;
+    if (x < radius_top_left && y < radius_top_left) {
+        dx = (radius_top_left - 1) - x;
+        dy = (radius_top_left - 1) - y;
+
+        float d  = sqrtf(dx*dx + dy*dy);
+        float a = radius_top_left + 0.5f - d;
+        a = fminf(fmaxf(a, 0.0f), 1.0f);
+        alpha = (unsigned char)(a * 255.0f);
         
     }
 
     // top-right
-    else if (x >= width - radius && y < radius) {
-        dx = x - (width - radius);
-        dy = (radius - 1) - y;
-    }
+    else if (x >= width - radius_top_right && y < radius_top_right) {
+        dx = x - (width - radius_top_right);
+        dy = (radius_top_right - 1) - y;
 
-    // bottom-left
-    else if (x < radius && y >= height - radius) {
-        dx = (radius - 1) - x;
-        dy = y - (height - radius);
+        float d  = sqrtf(dx*dx + dy*dy);
+        float a = radius_top_right + 0.5f - d;
+        a = fminf(fmaxf(a, 0.0f), 1.0f);
+        alpha = (unsigned char)(a * 255.0f);
     }
 
     // bottom-right
-    else if (x >= width - radius && y >= height - radius) {
-        dx = x - (width - radius);
-        dy = y - (height - radius);
+    else if (x >= width - radius_bottom_right && y >= height - radius_bottom_right) {
+        dx = x - (width - radius_bottom_right);
+        dy = y - (height - radius_bottom_right);
+
+        float d  = sqrtf(dx*dx + dy*dy);
+        float a = radius_bottom_right + 0.5f - d;
+        a = fminf(fmaxf(a, 0.0f), 1.0f);
+        alpha = (unsigned char)(a * 255.0f);
     }
+
+    // bottom-left
+    else if (x < radius_bottom_left && y >= height - radius_bottom_left) {
+        dx = (radius_bottom_left - 1) - x;
+        dy = y - (height - radius_bottom_left);
+
+        float d  = sqrtf(dx*dx + dy*dy);
+        float a = radius_bottom_left + 0.5f - d;
+        a = fminf(fmaxf(a, 0.0f), 1.0f);
+        alpha = (unsigned char)(a * 255.0f);
+    }
+
+    
 
     else {
         return;
     }
 
-    float d  = sqrtf(dx*dx + dy*dy);
-
-    float a = radius + 0.5f - d;
-    a = fminf(fmaxf(a, 0.0f), 1.0f);
-    alpha = (unsigned char)(a * 255.0f);
-
-    // Modulate existing alpha
-    src[index + 3] = (src[index + 3] * alpha + 127) / 255;
+    
+    dst[index] = (dst[index] * alpha + 127) / 255;
 }

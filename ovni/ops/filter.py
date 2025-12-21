@@ -58,49 +58,44 @@ def chroma_key(src: cp.ndarray, key_color: tuple[int, int, int], transparency_t:
 
 
 
-def round_corners(src: cp.ndarray, radius: int) -> cp.ndarray:
+
+def round_mask(src: cp.ndarray, radius: int | tuple[int, int, int, int]) -> None:
     """
-    Rounds the corners of the source array
-    Returns the new array
+    Rounds the given array
+    NOTE: The array should have only 1 channel
     
     Parameters:
         src: cp.ndarray
-        radius: int
-
-    Returns:
-        cp.ndarray
+        radius: int | tuple[int, int, int, int] - radius number or tuple, top left, top right, bottom right, bottom left
     """
-
     width = src.shape[1]
     height = src.shape[0]
 
-    radius = min(radius, int(min(width, height) / 2))
+    if isinstance(radius, int):
+        radius = tuple([radius, radius, radius, radius])
 
-    if src.shape[2] == 3:
-        # Not alpha
-        rgba = cp.empty((height, width, 4), dtype=src.dtype)
-        rgba[..., :3] = src
-        rgba[..., 3] = 255
-
-        src = rgba
-
-    else:
-        # Already alpha
-        src = src.copy()
+    radius = tuple(
+        min(rad, int(min(width, height) / 2))
+        for rad in radius
+    )
+    
 
     blocks = make_blocks(width, height)
 
-    Kernels.round_corners(
+    Kernels.round_mask(
         blocks, THREADS,
         (
             src.ravel(),
-            cp.int32(radius),
+            cp.int32(radius[0]),
+            cp.int32(radius[1]),
+            cp.int32(radius[2]),
+            cp.int32(radius[3]),
             cp.int32(width),
             cp.int32(height)
         )
     )
 
-    return src
+
 
 
 
