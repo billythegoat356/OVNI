@@ -53,3 +53,49 @@ def chroma_key(src: cp.ndarray, key_color: tuple[int, int, int], transparency_t:
     )
 
     return rgba_array
+
+
+
+def round_corners(src: cp.ndarray, radius: int) -> cp.ndarray:
+    """
+    Rounds the corners of the source array
+    Returns the new array
+    
+    Parameters:
+        src: cp.ndarray
+        radius: int
+
+    Returns:
+        cp.ndarray
+    """
+
+    width = src.shape[1]
+    height = src.shape[0]
+
+    radius = min(radius, int(min(width, height) / 2))
+
+    if src.shape[2] == 3:
+        # Not alpha
+        rgba = cp.empty((height, width, 4), dtype=src.dtype)
+        rgba[..., :3] = src
+        rgba[..., 3] = 255
+
+        src = rgba
+
+    else:
+        # Already alpha
+        src = src.copy()
+
+    blocks = make_blocks(width, height)
+
+    Kernels.round_corners(
+        blocks, THREADS,
+        (
+            src.ravel(),
+            cp.int32(radius),
+            cp.int32(width),
+            cp.int32(height)
+        )
+    )
+
+    return src

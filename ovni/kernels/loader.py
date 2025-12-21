@@ -27,6 +27,7 @@ class Kernels:
 
     # Filter
     chroma_key = mod.get_function("chroma_key")
+    round_corners = mod.get_function("round_corners")
     
 
     # Libass
