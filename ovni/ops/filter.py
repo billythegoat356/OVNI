@@ -66,6 +66,7 @@ def round_mask(src: cp.ndarray, radius: int | tuple[int, int, int, int]) -> None
         src: cp.ndarray
         radius: int | tuple[int, int, int, int] - radius number or tuple, top left, top right, bottom right, bottom left
     """
+    
     width = src.shape[1]
     height = src.shape[0]
 
@@ -76,7 +77,6 @@ def round_mask(src: cp.ndarray, radius: int | tuple[int, int, int, int]) -> None
         min(rad, int(min(width, height) / 2))
         for rad in radius
     )
-    
 
     blocks = make_blocks(width, height)
 

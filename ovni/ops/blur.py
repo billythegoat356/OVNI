@@ -10,7 +10,7 @@ from ..kernels import Kernels, THREADS, make_blocks
 def gaussian_blur(src: cp.ndarray, sigma: float) -> cp.ndarray:
     """
     Performs gaussian blur on the given array with the given sigma
-    NOTE: Only works on arrays with 1 channel
+    NOTE: Supports 1 channel or 3
 
     Parameters:
         src: cp.ndarray
@@ -20,22 +20,12 @@ def gaussian_blur(src: cp.ndarray, sigma: float) -> cp.ndarray:
         cp.ndarray
     """
     
-    assert src.shape[2] == 1, "Gaussian blur only supports one channel"
-
-    # Compute radius and shape
+    # Compute radius and weights
     radius = math.ceil(3 * sigma)
-    weights_size = 2 * radius + 1
-    weights = []
-    for i in range(weights_size):
-        i -= radius
-        val = math.exp(-(i*i) / (2*sigma*sigma))
-        weights.append(val)
+    x = cp.arange(-radius, radius + 1, dtype=cp.float32)
+    weights = cp.exp(-(x * x) / (2 * sigma * sigma))
+    weights /= cp.sum(weights)
 
-    # Normalize
-    weights = [
-        val / sum(weights)
-        for val in weights
-    ]
     # Move to GPU
     weights_cp = cp.asarray(weights, dtype=cp.float32)
 
@@ -44,34 +34,53 @@ def gaussian_blur(src: cp.ndarray, sigma: float) -> cp.ndarray:
 
     blocks = make_blocks(width, height)
 
-    # Write first pass
-    dst = cp.zeros((height, width, 1), dtype=cp.uint8)
+    channels = src.shape[2]
 
-    Kernels.gaussian_blur_horizontal(
-        blocks, THREADS,
-        (
-            src.ravel(),
-            dst.ravel(),
-            weights_cp,
-            cp.int32(radius),
-            cp.int32(width),
-            cp.int32(height)
-        )
-    )
+    if channels == 1 or channels == 3:
 
-    # Write second pass
-    dst2 = cp.zeros((height, width, 1), dtype=cp.uint8)
+        if channels == 3:
+            final_dst = cp.zeros((height, width, 3), dtype=cp.uint8)
 
-    Kernels.gaussian_blur_vertical(
-        blocks, THREADS,
-        (
-            dst.ravel(),
-            dst2.ravel(),
-            weights_cp,
-            cp.int32(radius),
-            cp.int32(width),
-            cp.int32(height)
-        )
-    )
+        for i in range(channels):
+            # Write` first pass
+            dst = cp.zeros((height, width, 1), dtype=cp.uint8)
 
-    return dst2
+            Kernels.gaussian_blur_horizontal(
+                blocks, THREADS,
+                (
+                    src[:, :, i:i+1].ravel(),
+                    dst.ravel(),
+                    weights_cp,
+                    cp.int32(radius),
+                    cp.int32(width),
+                    cp.int32(height)
+                )
+            )
+
+            # Write second pass
+            dst2 = cp.zeros((height, width, 1), dtype=cp.uint8)
+
+            Kernels.gaussian_blur_vertical(
+                blocks, THREADS,
+                (
+                    dst.ravel(),
+                    dst2.ravel(),
+                    weights_cp,
+                    cp.int32(radius),
+                    cp.int32(width),
+                    cp.int32(height)
+                )
+            )
+
+            if channels == 1:
+                return dst2
+            
+            else:
+                final_dst[:, :, i:i+1] = dst2
+
+        return final_dst
+
+    else:
+        raise Exception("Gaussian blur only works on 1 or 3 channels")
+
+    

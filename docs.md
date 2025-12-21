@@ -149,9 +149,57 @@ When you **decrease** it, **more** pixels **close** to the key color will be **f
 
 Depending on your frame's coloring, you may want to play around with these values until it looks good.   
 
+## Rounding corners
+
+OVNI supports rounding corners, use the following:
+```py
+from ovni.ops import round_corners
+
+frame = round_corners(frame, radius=20)
+```
+Frame may be a RGB or RGBA array, both are supported.   
+The function always returs a RGBA array.   
+
+You may also pass the radius as a tuple.   
+The format is: `[top_left, top_right, bottom_right, bottom_left]`   
+```py
+from ovni.ops import round_corners
+
+frame = round_corners(frame, radius=[10, 40, 20, 30])
+```
+
+## Blur
+
+You can blur a frame using the gaussian blur algorithm.
+```py
+from ovni.ops import gaussian_blur
+
+frame = gaussian_blur(frame, sigma=10)
+```
+Sigma is the blur strength.   
+This function only supports RGB, or single channels frames (in order to use them as masks).   
+
+## Shadow
+
+You can create a custom shadow that you can then blend on the background frame.
+```py
+from ovni.ops import make_shadow
+
+shadow = make_shadow(
+    700,
+    400,
+    corner_radius=20,
+    blur=20,
+    color=(0, 0, 0),
+    alpha=120
+)
+```
+This creates a shadow of 700x400 pixels, with the given parameters.   
+The `blur` parameter represents the `sigma` parameter in the gaussian blur.
+
 ## Note
 
-By design, these filters *will not work* on RGBA arrays (4 channels).   
+By design, some of these filters *will not work* on RGBA arrays (4 channels).   
 
 
 # Captions

@@ -1,32 +1,34 @@
 from ovni.base import demux_and_decode, encode, mux, load_image
-from ovni.ops import pipe_nv12_to_rgb, pipe_rgb_to_nv12, scale_translate, resize, blend, round_corners, gaussian_blur, make_shadow
+from ovni.ops import pipe_nv12_to_rgb, pipe_rgb_to_nv12, scale_translate, resize, overlay, round_corners, gaussian_blur
 import cupy as cp
 from _get_caller import call
 
 
 
 
-
+IMAGE_PATH = "examples/media/image.png"
 OUT_PATH = "examples/media/out.mp4"
 
-WIDTH = 1920
-HEIGHT = 1080
+WIDTH = 960
+HEIGHT = 540
 FPS = 25
 BITRATE = '3M'
 
 FRAMES = 300
 
 
-def shadow():
+def blur():
     """
-    Shaadoooow
+    bluR
     """
 
     # White bg frame
     bg_frame = cp.zeros((HEIGHT, WIDTH, 3), dtype=cp.uint8)
     bg_frame[:, :, :] = 255
 
-    frame = cp.zeros((800, 1400, 3), dtype=cp.uint8)
+    # Load image & resize to output resolution
+    frame = load_image(IMAGE_PATH)
+    frame = resize(frame, 700, 400)
 
     # Define frames generator method
     def frames_generator():
@@ -34,16 +36,10 @@ def shadow():
         Y = 50
 
         for i in range(FRAMES):
-            shad = make_shadow(
-                700,
-                400,
-                corner_radius=20,
-                blur=20,
-                alpha=120
-            )
-
             this_bg_frame = bg_frame.copy()
-            blend(this_bg_frame, shad, X, Y)
+
+            nframe = gaussian_blur(frame, i+1)
+            overlay(this_bg_frame, nframe, X, Y)
             yield this_bg_frame
 
     # Create pipe
@@ -71,4 +67,4 @@ def shadow():
 
 
 if __name__ == "__main__":
-    call(shadow, FRAMES, FPS)
+    call(blur, FRAMES, FPS)
