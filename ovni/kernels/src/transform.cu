@@ -37,6 +37,40 @@ void scale_translate(
 
 
 extern "C" __global__
+void scale_translate_4c(
+    const unsigned char* src,
+    int srcw,
+    int srch,
+    unsigned char* dst,
+    int dstw,
+    int dsth,
+    float scale,
+    float tx,
+    float ty
+) {
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (x >= dstw || y >= dsth) return;
+
+    int flattened_coords = (y * dstw + x) * 4;
+
+    float sx = (x - tx) / scale;
+    float sy = (y - ty) / scale;
+
+    unsigned char R, G, B, A;
+
+    bilinear_pixel_4c(src, srcw, srch, sx, sy, &R, &G, &B, &A);
+
+    dst[flattened_coords] = R;
+    dst[flattened_coords + 1] = G;
+    dst[flattened_coords + 2] = B;
+    dst[flattened_coords + 3] = A;
+}
+
+
+
+extern "C" __global__
 void resize(
     const unsigned char* src,
     int srcw, 

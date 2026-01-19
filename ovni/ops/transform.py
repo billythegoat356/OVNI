@@ -36,12 +36,17 @@ def scale_translate(src: cp.ndarray, scale: float, tx: float, ty: float, dst_wid
         dst_height = src_height
 
     # Create output array
-    dst = cp.empty((dst_height, dst_width, 3), dtype=cp.uint8)
+    dst = cp.empty((dst_height, dst_width, src.shape[2]), dtype=cp.uint8)
 
     blocks = make_blocks(dst_width, dst_height)
 
     # Call kernel
-    Kernels.scale_translate(
+
+    if src.shape[2] == 4:
+        fn = Kernels.scale_translate_4c
+    else:
+        fn = Kernels.scale_translate
+    fn(
         blocks, THREADS,
         (
             src.ravel(),
