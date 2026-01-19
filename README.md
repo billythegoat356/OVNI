@@ -7,7 +7,7 @@ The frames can then be encoded while still on the GPU with NVC, and a FFmpeg pip
 
 The whole process is written in Python and follows a generator-based pipeline allowing it to remain suitable for real-time tasks while also avoiding filling up the GPU memory.   
 
-I coded this in 2 days so there is definitely room for improvement, speed wise and code wise, and some features may be missing or incomplete.   
+I coded this quickly so there is definitely room for improvement, speed wise and code wise, and some features may be missing or incomplete.   
 
 # Requirements
 - A Nvidia graphics card

@@ -118,6 +118,15 @@ Blending is similar to overlaying, but you can pass a RGBA overlay, applying a c
 blend(frame, overlay_with_alpha, 0, 0)
 ```
 
+## Rotate
+You can rotate a frame using the following function:
+```py
+rotated_frame = rotate(frame, degrees=degrees)
+```
+The function takes the **degrees** of the rotation.   
+You can also pass the optional parameters `cx` and `cy` which represent the center of the rotation.   
+If you omit them, they will default to the frame center.   
+
 ## Chroma key
 You can turn a RGB frame into RGBA by applying chroma keying.   
 This process is like removing a green screen, allowing to then blend your frame with whatever background you have. 

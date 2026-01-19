@@ -149,3 +149,43 @@ void blend(
 }
 
 
+extern "C" __global__
+void rotate(
+    const unsigned char* src,
+    int width,
+    int height,
+    unsigned char* dst,
+    float angle,    // rotation angle in radians
+    float cx,       // center x of rotation (in dst coords)
+    float cy        // center y of rotation (in dst coords)
+) {
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (x >= width || y >= height) return;
+
+    // Destination
+    int flattened_coords = (y * width + x) * 3;
+
+    // Translate to origin, rotate, translate back
+    float cos_a = cosf(angle);
+    float sin_a = sinf(angle);
+    
+    float dx = x - cx;
+    float dy = y - cy;
+    
+    // Inverse rotation to find source coordinates
+    // (we use a clockwise rotation)
+    float sx = dx * cos_a - dy * sin_a + cx;
+    float sy = dx * sin_a + dy * cos_a + cy;
+
+    unsigned char R;
+    unsigned char G;
+    unsigned char B;
+
+    bilinear_pixel(src, width, height, sx, sy, &R, &G, &B);
+
+    dst[flattened_coords] = R;
+    dst[flattened_coords + 1] = G;
+    dst[flattened_coords + 2] = B;
+}

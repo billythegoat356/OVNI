@@ -1,4 +1,5 @@
 import cupy as cp
+import math
 
 from ..kernels import Kernels, THREADS, make_blocks
 from .interpolation import bilinear_blend, linear_blend
@@ -420,3 +421,50 @@ def blend(src: cp.ndarray, overlay_arr: cp.ndarray, x: int | float, y: int | flo
         if not region.flags['C_CONTIGUOUS']:
             # Only assign back if ravel created a copy (non-contiguous slice)
             src[top_y:bottom_y, left_x:right_x, :] = ksrc.reshape((overlay_h, overlay_w, -1))
+
+
+
+
+
+def rotate(src: cp.ndarray, degrees: float, cx: float | None = None, cy: float | None = None) -> cp.ndarray:
+    """
+    Rotates a frame by the given amount of degrees and returns the new frame
+
+    Parameters:
+        src: cp.ndarray
+        degrees: float
+        cx: float | None = None - rotation center, defaults to the frame center
+        cy: float | None = None - rotation center, defaults to the frame center
+    
+    Returns:
+        cp.ndarray
+    """
+
+    radians = math.radians(degrees)
+
+    width = src.shape[1]
+    height = src.shape[0]
+
+    if cx is None:
+        cx = (width - 1) / 2
+
+    if cy is None:
+        cy = (height - 1) / 2
+
+    blocks = make_blocks(width, height)
+
+    dst = cp.empty((height, width, 3), dtype=cp.uint8)
+
+    Kernels.rotate(
+        blocks, THREADS,
+        (
+            src.ravel(),
+            cp.int32(width),
+            cp.int32(height),
+            dst.ravel(),
+            cp.float32(radians),
+            cp.float32(cx),
+            cp.float32(cy),
+        )
+    )
+    return dst
