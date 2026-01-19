@@ -23,6 +23,7 @@ class Kernels:
     blend = mod.get_function("blend")
     blend_4c = mod.get_function("blend_4c")
     rotate = mod.get_function("rotate")
+    rotate_4c = mod.get_function("rotate_4c")
 
     # Interpolation
     bilinear_blend = mod.get_function("bilinear_blend")

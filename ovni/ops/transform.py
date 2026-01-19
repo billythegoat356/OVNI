@@ -439,9 +439,12 @@ def blend(src: cp.ndarray, overlay_arr: cp.ndarray, x: int | float, y: int | flo
 def rotate(src: cp.ndarray, degrees: float, cx: float | None = None, cy: float | None = None) -> cp.ndarray:
     """
     Rotates a frame by the given amount of degrees and returns the new frame
+    NOTE: Output frame will be same dimensions as the input frame.
+          You are expected to enlarge input frame to allow rotation to appear entirely.
+
 
     Parameters:
-        src: cp.ndarray
+        src: cp.ndarray - 3 or 4 channels
         degrees: float
         cx: float | None = None - rotation center, defaults to the frame center
         cy: float | None = None - rotation center, defaults to the frame center
@@ -463,9 +466,14 @@ def rotate(src: cp.ndarray, degrees: float, cx: float | None = None, cy: float |
 
     blocks = make_blocks(width, height)
 
-    dst = cp.empty((height, width, 3), dtype=cp.uint8)
+    dst = cp.empty((height, width, src.shape[2]), dtype=cp.uint8)
 
-    Kernels.rotate(
+    if src.shape[2] == 4:
+        fn = Kernels.rotate_4c
+    else:
+        fn = Kernels.rotate
+
+    fn(
         blocks, THREADS,
         (
             src.ravel(),
