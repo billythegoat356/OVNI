@@ -150,6 +150,37 @@ void blend(
 
 
 extern "C" __global__
+void blend_4c(
+    unsigned char* src,
+    const unsigned char* overlay,
+    int width,
+    int height
+) {
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (x >= width || y >= height) return;
+
+    int coords = (y * width + x) * 4;
+
+    float ov_alpha = float(overlay[coords + 3]) / 255.0f;
+    float src_alpha = float(src[coords + 3]) / 255.0f;
+
+    float comb_alpha = ov_alpha + src_alpha * (1 - ov_alpha);
+
+    if (comb_alpha == 0) return;
+
+    float coef_ov = ov_alpha / comb_alpha;
+    float coef_src = src_alpha * (1 - ov_alpha) / comb_alpha;
+
+    src[coords] = (unsigned char)(overlay[coords] * coef_ov + src[coords] * coef_src);
+    src[coords + 1] = (unsigned char)(overlay[coords + 1] * coef_ov + src[coords + 1] * coef_src);
+    src[coords + 2] = (unsigned char)(overlay[coords + 2] * coef_ov + src[coords + 2] * coef_src);
+    src[coords + 3] = (unsigned char)(comb_alpha * 255);
+}
+
+
+extern "C" __global__
 void rotate(
     const unsigned char* src,
     int width,

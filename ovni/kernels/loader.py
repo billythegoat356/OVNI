@@ -20,6 +20,7 @@ class Kernels:
     resize = mod.get_function("resize")
     overlay_opacity = mod.get_function("overlay_opacity")
     blend = mod.get_function("blend")
+    blend_4c = mod.get_function("blend_4c")
     rotate = mod.get_function("rotate")
 
     # Interpolation

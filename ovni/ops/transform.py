@@ -312,7 +312,7 @@ def blend(src: cp.ndarray, overlay_arr: cp.ndarray, x: int | float, y: int | flo
     Modifies it in place
 
     Parameters:
-        src: cp.ndarray of 3 channels, RGB
+        src: cp.ndarray of 3 or 4 channels, RGB
         overlay_arr: cp.ndarray of 4 channels, RGBA
         x: int | float
         y: int | float
@@ -408,7 +408,12 @@ def blend(src: cp.ndarray, overlay_arr: cp.ndarray, x: int | float, y: int | flo
         ksrc = region.ravel()
         koverlay = clipped_overlay.ravel()
 
-        Kernels.blend(
+        if region.shape[2] == 4:
+            fn = Kernels.blend_4c
+        else:
+            fn = Kernels.blend
+
+        fn(
             blocks, THREADS,
             (
                 ksrc,
