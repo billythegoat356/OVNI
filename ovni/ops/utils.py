@@ -6,7 +6,7 @@ from .blur import gaussian_blur
 
 
 
-def round_corners(src: cp.ndarray, radius: int | tuple[int, int, int, int]) -> cp.ndarray:
+def round_corners(src: cp.ndarray, radius: int | tuple[int, int, int, int], smoothing: float = 2) -> cp.ndarray:
     """
     Rounds the corners of the source array
     Returns the new array
@@ -14,7 +14,8 @@ def round_corners(src: cp.ndarray, radius: int | tuple[int, int, int, int]) -> c
     Parameters:
         src: cp.ndarray
         radius: int | tuple[int, int, int, int] - radius number or tuple, top left, top right, bottom right, bottom left
-
+        smoothing: float = 2
+        
     Returns:
         cp.ndarray
     """
@@ -34,7 +35,7 @@ def round_corners(src: cp.ndarray, radius: int | tuple[int, int, int, int]) -> c
 
     mask = dst[:, :, 3:4].copy()
 
-    round_mask(mask, radius)
+    round_mask(mask, radius, smoothing=smoothing)
 
     dst[:, :, 3:4] = mask
 
@@ -47,7 +48,8 @@ def make_shadow(
     corner_radius: int,
     blur: int,
     color: tuple[int, int, int] = (0, 0, 0),
-    alpha: int = 122
+    alpha: int = 122,
+    corner_smoothing: float = 2
 ) -> cp.ndarray:
     """
     Makes a shadow with the given params
@@ -59,6 +61,7 @@ def make_shadow(
         blur: int
         color: tuple[int, int, int] = (0, 0, 0)
         alpha: int = 122
+        corner_smoothing: float = 2
     """
 
     # We need to pad otherwise the shadow looks cut off
@@ -68,7 +71,7 @@ def make_shadow(
     shape = cp.full((height, width, 1), alpha, dtype=cp.uint8)
 
     if corner_radius > 0:
-        round_mask(shape, corner_radius)
+        round_mask(shape, corner_radius, corner_smoothing)
 
     # Create padded shape & overlay the rounded temp shape's
     # We only operate on the alpha channel

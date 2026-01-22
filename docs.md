@@ -176,6 +176,13 @@ from ovni.ops import round_corners
 
 frame = round_corners(frame, radius=[10, 40, 20, 30])
 ```
+You can also use custom corner smoothing.   
+```py
+frame = round_corners(frame, radius=20, smoothing=4)
+```
+Higher values make it more square.   
+The default is `2`, which is generic rounded corners.   
+For example, the value `4`-`5` mimics the iOS "squircles".   
 
 ## Blur
 
@@ -200,7 +207,8 @@ shadow = make_shadow(
     corner_radius=20,
     blur=20,
     color=(0, 0, 0),
-    alpha=120
+    alpha=120,
+    corner_smoothing=2
 )
 ```
 This creates a shadow of 700x400 pixels, with the given parameters.   

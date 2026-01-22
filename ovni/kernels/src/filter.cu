@@ -43,6 +43,7 @@ void round_mask(
     int radius_top_right,
     int radius_bottom_right,
     int radius_bottom_left,
+    float smoothing,
     int width,
     int height
 ) {
@@ -56,6 +57,7 @@ void round_mask(
 
     float dx = 0.0f;
     float dy = 0.0f;
+    float d;
 
     unsigned char alpha;
 
@@ -64,11 +66,15 @@ void round_mask(
         dx = (radius_top_left - 1) - x;
         dy = (radius_top_left - 1) - y;
 
-        float d  = sqrtf(dx*dx + dy*dy);
+        if (smoothing == 2.0f) {
+            d = sqrtf(dx*dx + dy*dy);
+        } else {
+            d = powf(powf(fabsf(dx), smoothing) + powf(fabsf(dy), smoothing), 1.0f / smoothing);
+        }
         float a = radius_top_left + 0.5f - d;
         a = fminf(fmaxf(a, 0.0f), 1.0f);
         alpha = (unsigned char)(a * 255.0f);
-        
+
     }
 
     // top-right
@@ -76,7 +82,11 @@ void round_mask(
         dx = x - (width - radius_top_right);
         dy = (radius_top_right - 1) - y;
 
-        float d  = sqrtf(dx*dx + dy*dy);
+        if (smoothing == 2.0f) {
+            d = sqrtf(dx*dx + dy*dy);
+        } else {
+            d = powf(powf(fabsf(dx), smoothing) + powf(fabsf(dy), smoothing), 1.0f / smoothing);
+        }
         float a = radius_top_right + 0.5f - d;
         a = fminf(fmaxf(a, 0.0f), 1.0f);
         alpha = (unsigned char)(a * 255.0f);
@@ -87,7 +97,11 @@ void round_mask(
         dx = x - (width - radius_bottom_right);
         dy = y - (height - radius_bottom_right);
 
-        float d  = sqrtf(dx*dx + dy*dy);
+        if (smoothing == 2.0f) {
+            d = sqrtf(dx*dx + dy*dy);
+        } else {
+            d = powf(powf(fabsf(dx), smoothing) + powf(fabsf(dy), smoothing), 1.0f / smoothing);
+        }
         float a = radius_bottom_right + 0.5f - d;
         a = fminf(fmaxf(a, 0.0f), 1.0f);
         alpha = (unsigned char)(a * 255.0f);
@@ -98,7 +112,11 @@ void round_mask(
         dx = (radius_bottom_left - 1) - x;
         dy = y - (height - radius_bottom_left);
 
-        float d  = sqrtf(dx*dx + dy*dy);
+        if (smoothing == 2.0f) {
+            d = sqrtf(dx*dx + dy*dy);
+        } else {
+            d = powf(powf(fabsf(dx), smoothing) + powf(fabsf(dy), smoothing), 1.0f / smoothing);
+        }
         float a = radius_bottom_left + 0.5f - d;
         a = fminf(fmaxf(a, 0.0f), 1.0f);
         alpha = (unsigned char)(a * 255.0f);

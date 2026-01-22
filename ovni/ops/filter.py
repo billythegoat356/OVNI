@@ -57,7 +57,7 @@ def chroma_key(src: cp.ndarray, key_color: tuple[int, int, int], transparency_t:
 
 
 
-def round_mask(src: cp.ndarray, radius: int | tuple[int, int, int, int]) -> None:
+def round_mask(src: cp.ndarray, radius: int | tuple[int, int, int, int], smoothing: float = 2) -> None:
     """
     Rounds the given array
     NOTE: The array should have only 1 channel
@@ -65,6 +65,7 @@ def round_mask(src: cp.ndarray, radius: int | tuple[int, int, int, int]) -> None
     Parameters:
         src: cp.ndarray
         radius: int | tuple[int, int, int, int] - radius number or tuple, top left, top right, bottom right, bottom left
+        smoothing: float = 2
     """
     
     width = src.shape[1]
@@ -88,6 +89,7 @@ def round_mask(src: cp.ndarray, radius: int | tuple[int, int, int, int]) -> None
             cp.int32(radius[1]),
             cp.int32(radius[2]),
             cp.int32(radius[3]),
+            cp.float32(smoothing),
             cp.int32(width),
             cp.int32(height)
         )

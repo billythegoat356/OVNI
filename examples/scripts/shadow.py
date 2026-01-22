@@ -37,9 +37,10 @@ def shadow():
             shad = make_shadow(
                 700,
                 400,
-                corner_radius=20,
+                corner_radius=100,
                 blur=20,
-                alpha=120
+                alpha=120,
+                corner_smoothing=2
             )
 
             this_bg_frame = bg_frame.copy()
