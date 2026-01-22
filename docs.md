@@ -214,6 +214,20 @@ shadow = make_shadow(
 This creates a shadow of 700x400 pixels, with the given parameters.   
 The `blur` parameter represents the `sigma` parameter in the gaussian blur.
 
+## Vignette
+
+Apply a vignette effect to a frame like this:
+```py
+vignette(frame, strength=0.5, radius=0.5, softness=0.5)
+```
+Here is what each param represent:   
+- `strength` - how dark the edges get (0.0 = none, 1.0 = full black)
+- `radius` - where the falloff starts (0.0 = center, 1.0 = edges)
+- `softness` - width of the falloff gradient (0.0 = sharp, 1.0 = smooth)
+
+The frame is expected to have 3 channels.
+
+
 ## Note
 
 By design, some of these filters *will not work* on RGBA arrays (4 channels).   

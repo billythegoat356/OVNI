@@ -32,6 +32,7 @@ class Kernels:
     # Filter
     chroma_key = mod.get_function("chroma_key")
     round_mask = mod.get_function("round_mask")
+    vignette = mod.get_function("vignette")
     
     # Libass
     blend_ass_image = mod.get_function("blend_ass_image")

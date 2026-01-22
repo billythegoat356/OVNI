@@ -94,3 +94,33 @@ def round_mask(src: cp.ndarray, radius: int | tuple[int, int, int, int], smoothi
             cp.int32(height)
         )
     )
+
+
+
+def vignette(src: cp.ndarray, strength: float = 0.5, radius: float = 0.5, softness: float = 0.5) -> None:
+    """
+    Applies a vignette effect (darkens edges) to the source array in-place
+
+    Parameters:
+        src: cp.ndarray - 3 channel RGBA array
+        strength: float = 0.5 - how dark the edges get (0.0 = none, 1.0 = full black)
+        radius: float = 0.5 - where the falloff starts (0.0 = center, 1.0 = edges)
+        softness: float = 0.5 - width of the falloff gradient
+    """
+
+    width = src.shape[1]
+    height = src.shape[0]
+
+    blocks = make_blocks(width, height)
+
+    Kernels.vignette(
+        blocks, THREADS,
+        (
+            src.ravel(),
+            cp.float32(strength),
+            cp.float32(radius),
+            cp.float32(softness),
+            cp.int32(width),
+            cp.int32(height)
+        )
+    )
