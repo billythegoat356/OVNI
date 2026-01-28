@@ -15,7 +15,7 @@ def scale_translate(src: cp.ndarray, scale: float, tx: float, ty: float, dst_wid
     NOTE: The scale is applied first, then the translation
 
     Parameters:
-        src: cp.ndarray (H x W x 3), dtype=uint8
+        src: cp.ndarray (H x W x 3/4), dtype=uint8
         scale: float
         tx: float
         ty: float
@@ -70,13 +70,13 @@ def scale(src: cp.ndarray, scale: float, dst_width: int | None = None, dst_heigh
     (essentially calls `scale_translate` with no translation)
 
     Parameters:
-        src: cp.ndarray (H x W x 3), dtype=uint8
+        src: cp.ndarray (H x W x 3/4), dtype=uint8
         scale: float
         dst_width: int | None = None - if None, uses the same as input
         dst_height: int | None = None - ...
 
     Returns:
-        dst: cp.ndarray (dst_height x dst_width x 3), dtype=uint8
+        dst: cp.ndarray (dst_height x dst_width x 3/4), dtype=uint8
     """
 
     return scale_translate(
@@ -95,14 +95,14 @@ def translate(src: cp.ndarray, tx: float, ty: float, dst_width: int | None = Non
     (essentially calls `scale_translate` with no scale)
 
     Parameters:
-        src: cp.ndarray (H x W x 3), dtype=uint8
+        src: cp.ndarray (H x W x 3/4), dtype=uint8
         tx: float
         ty: float
         dst_width: int | None = None - if None, uses the same as input
         dst_height: int | None = None - ...
 
     Returns:
-        dst: cp.ndarray (dst_height x dst_width x 3), dtype=uint8
+        dst: cp.ndarray (dst_height x dst_width x 3/4), dtype=uint8
     """
 
     return scale_translate(
