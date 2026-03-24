@@ -9,6 +9,9 @@ from .config import GPU_ID
 
 
 
+cuda.init()
+
+
 """
 Manager of thread-specific cuda contexts
 ------
